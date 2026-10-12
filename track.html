@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Тапсырыс — EVAGO</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#FFD200">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.tr{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding-block:32px 80px;align-items:start}
+.tr>*{min-width:0}
+.card{border:1px solid var(--line);border-radius:20px;padding:22px;display:grid;gap:18px;background:var(--white)}
+.no{font-size:13px;color:var(--muted)}
+.status{display:flex;gap:14px;align-items:center}
+.st-ic{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--accent-soft)}
+.st-ic svg{width:26px;height:26px}
+.status h1{font-size:24px;font-weight:800}
+.status p{color:var(--muted);margin-top:4px}
+.pulse{width:14px;height:14px;border-radius:50%;background:var(--accent-2);animation:pl 1.4s ease-out infinite}
+@keyframes pl{0%{box-shadow:0 0 0 0 rgba(242,197,0,.6)}100%{box-shadow:0 0 0 18px rgba(242,197,0,0)}}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.steps i{height:5px;border-radius:3px;background:var(--line)}
+.steps i.on{background:var(--accent)}
+.driver{display:flex;gap:14px;align-items:center;background:var(--gray);border-radius:14px;padding:14px}
+.ava{width:46px;height:46px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font-weight:800;flex:none}
+.driver b{display:block}
+.driver span{font-size:14px;color:var(--muted)}
+.driver .eta{margin-left:auto;text-align:right}
+.driver .eta b{font-size:22px}
+.rows{display:grid;gap:8px;font-size:15px}
+.rows .r{display:flex;gap:10px}
+.rows .dot{width:10px;height:10px;border-radius:50%;margin-top:7px;flex:none}
+.dot-a{background:var(--ink)}.dot-b{background:var(--accent)}
+.rows .p{display:flex;justify-content:space-between;border-top:1px dashed var(--line);padding-top:10px;font-weight:700}
+.acts{display:grid;gap:10px}
+.stars{display:flex;gap:6px}
+.stars button{border:0;background:none;font-size:34px;line-height:1;cursor:pointer;color:#D8D8D2;padding:0}
+.stars button.on{color:var(--accent)}
+#tmap{height:100%;min-height:420px;border-radius:20px;overflow:hidden;isolation:isolate;border:1px solid var(--line)}
+.upd{font-size:12px;color:var(--muted);text-align:center}
+.confirm{background:#FFF0EF;border-radius:12px;padding:14px;display:grid;gap:10px}
+.confirm div{display:flex;gap:10px}
+.confirm .btn{flex:1}
+@media (max-width:860px){.tr{grid-template-columns:1fr;padding-block:0 60px}#tmap{min-height:240px;height:240px;border-radius:0 0 20px 20px;border-top:0;margin-inline:-20px}.card{padding:18px}}
+</style>
+</head>
+<body data-page="track">
+<header id="site-header"></header>
+<main class="wrap tr">
+  <div class="card" id="card">
+    <div class="status"><span class="pulse"></span><span data-i="o_sending"></span></div>
+  </div>
+  <div id="tmap"></div>
+</main>
+<footer id="contact"></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="assets/app.js"></script>
+<script>
+const id = new URLSearchParams(location.search).get("id") || lastOrder();
+const ORDER_STEPS = ["new", "accepted", "onway", "arrived"];
+let lastKey = "";
+let O = null, loaded = false, map, layers = [], timer, confirmCancel = false, rated = false, myRating = 0;
+
+const ST_ICON = {
+  new: '<span class="pulse"></span>',
+  accepted: '<svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
+  onway: '<svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICONS.tow + '</svg>',
+  arrived: '<svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  done: '<svg viewBox="0 0 24 24" fill="none" stroke="#1FA855" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>',
+  cancelled: '<svg viewBox="0 0 24 24" fill="none" stroke="#FF3B30" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
+};
+
+function initMap() {
+  map = L.map("tmap", { zoomControl: false }).setView(EVAGO.center, 12);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
+}
+function drawMap() {
+  layers.forEach(l => map.removeLayer(l)); layers = [];
+  const pin = cls => L.divIcon({ className: "", html: `<div class="pin ${cls}"></div>`, iconSize: [30, 30], iconAnchor: [15, 36] });
+  const pts = [];
+  if (O.from_lat) { layers.push(L.marker([O.from_lat, O.from_lng], { icon: pin("pin-a") }).addTo(map)); pts.push([O.from_lat, O.from_lng]); }
+  if (O.to_lat) { layers.push(L.marker([O.to_lat, O.to_lng], { icon: pin("pin-b") }).addTo(map)); pts.push([O.to_lat, O.to_lng]); }
+  if (pts.length === 2) layers.push(L.polyline(pts, { color: "#007AFF", weight: 4, dashArray: "6 8" }).addTo(map));
+  if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(.4), { maxZoom: 15 });
+}
+let drvMarker = null, drvFitted = false;
+function drawDriver() {
+  if (!O || O.driver_lat == null) { if (drvMarker) { map.removeLayer(drvMarker); drvMarker = null; } return; }
+  const ll = [O.driver_lat, O.driver_lng];
+  if (!drvMarker) drvMarker = L.marker(ll, { icon: L.divIcon({ className: "", html: '<div class="truck-dot"></div>', iconSize: [34, 34], iconAnchor: [17, 17] }), zIndexOffset: 1000 }).addTo(map).bindTooltip(t("t_driver_here"));
+  else drvMarker.setLatLng(ll);
+  if (!drvFitted && O.from_lat) { drvFitted = true; map.fitBounds(L.latLngBounds([ll, [O.from_lat, O.from_lng]]).pad(.3), { maxZoom: 16 }); }
+}
+
+function render() {
+  loaded = true;
+  const c = $("#card");
+  if (!O) {
+    c.innerHTML = `<div class="status"><span class="st-ic">${ST_ICON.cancelled}</span><div><h1>${t("t_notfound")}</h1></div></div><a class="btn btn-y" href="order.html">${t("t_new_order")}</a>`;
+    return;
+  }
+  const s = O.status, svc = svcById(O.service), car = carById(O.car_type);
+  const idx = ORDER_STEPS.indexOf(s), active = s !== "done" && s !== "cancelled";
+  const price = O.final_price || O.price_est;
+  const dPhone = O.driver_phone ? O.driver_phone.replace(/\s/g, "") : "";
+  c.innerHTML = `
+    <span class="no">${t("t_no")} ${esc(O.id.slice(0, 8).toUpperCase())} · ${new Date(O.created_at).toLocaleString(LANG === "kz" ? "kk-KZ" : "ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+    <div class="status"><span class="st-ic">${ST_ICON[s] || ""}</span><div><h1>${t("st_" + s)}</h1><p>${t("st_" + s + "_d")}</p></div></div>
+    ${active ? `<div class="steps">${ORDER_STEPS.map((x, i) => `<i class="${i <= idx ? "on" : ""}"></i>`).join("")}</div>` : ""}
+    ${O.driver_name ? `<div class="driver"><span class="ava">${esc(O.driver_name[0])}</span><div><b>${esc(O.driver_name)}</b><span>${esc(O.driver_car || "")}</span></div>
+      ${O.eta_min && active ? `<div class="eta"><span>${t("t_eta")}</span><b class="num">${O.eta_min} ${t("o_min")}</b></div>` : ""}</div>` : ""}
+    <div class="rows">
+      <b>${esc(svc[LANG][0])} · ${esc(car[LANG])}</b>
+      <div class="r"><span class="dot dot-a"></span><span>${esc(O.from_address)}</span></div>
+      ${O.to_address ? `<div class="r"><span class="dot dot-b"></span><span>${esc(O.to_address)}</span></div>` : ""}
+      ${price ? `<div class="p"><span>${t("o_price")}${O.distance_km ? ` · ${O.distance_km} ${t("o_km")}` : ""}</span><span class="num">${O.final_price ? "" : "≈ "}${money(price)}</span></div>` : ""}
+    </div>
+    <div class="acts" id="acts"></div>
+    ${active ? `<p class="upd">${t("t_updated")} · ${t("t_saved")}</p>` : ""}`;
+
+  const acts = $("#acts");
+  if (dPhone && active) acts.insertAdjacentHTML("beforeend", `<a class="btn btn-y" href="tel:${esc(dPhone)}">${t("t_call")} · ${esc(O.driver_phone)}</a>`);
+  if (s === "new" || s === "accepted") {
+    if (!confirmCancel) {
+      acts.insertAdjacentHTML("beforeend", `<button class="btn btn-red" type="button" id="cancel">${t("t_cancel")}</button>`);
+      $("#cancel").onclick = () => { confirmCancel = true; render(); };
+    } else {
+      acts.insertAdjacentHTML("beforeend", `<div class="confirm"><b>${t("t_cancel_q")}</b><div><button class="btn btn-o btn-sm" id="c-no" type="button">${t("t_no_btn")}</button><button class="btn btn-sm" style="background:var(--red);color:#fff" id="c-yes" type="button">${t("t_yes")}</button></div></div>`);
+      $("#c-no").onclick = () => { confirmCancel = false; render(); };
+      $("#c-yes").onclick = async () => { $("#c-yes").disabled = true; try { await rpc("cancel_order", { p_id: O.id }); } catch (e) {} confirmCancel = false; load(); };
+    }
+  }
+  if (s === "done") {
+    if (O.rating || rated) acts.insertAdjacentHTML("beforeend", `<p><b>${t("t_thanks")}</b> ${"★".repeat(O.rating || myRating)}</p>`);
+    else {
+      acts.insertAdjacentHTML("beforeend", `<b>${t("t_rate")}</b><div class="stars">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-n="${n}" aria-label="${n}" class="${n <= myRating ? "on" : ""}">★</button>`).join("")}</div>
+        <textarea class="input" id="review" maxlength="500" placeholder="${t("t_review_ph")}"></textarea><button class="btn btn-y" id="rate" type="button" ${myRating ? "" : "disabled"}>${t("t_send")}</button>`);
+      $$(".stars button").forEach(b => b.onclick = () => { myRating = +b.dataset.n; const r = $("#review").value; render(); $("#review").value = r; });
+      $("#rate").onclick = async () => { $("#rate").disabled = true; try { await rpc("rate_order", { p_id: O.id, p_rating: myRating, p_review: $("#review").value }); rated = true; } catch (e) { $("#rate").disabled = false; } render(); };
+    }
+  }
+  if (!active) { acts.insertAdjacentHTML("beforeend", `<a class="btn btn-o" href="order.html">${t("t_new_order")}</a>`); lastOrder(null); }
+}
+
+async function load() {
+  try {
+    const rows = await rpc("get_order", { p_id: id });
+    const prev = O && O.status;
+    O = rows && rows[0] || null;
+    if (!O) { render(); return; }
+    const changed = !prev || prev !== O.status || JSON.stringify([O.driver_name, O.eta_min, O.final_price, O.rating]) !== lastKey;
+    lastKey = JSON.stringify([O.driver_name, O.eta_min, O.final_price, O.rating]);
+    if (changed && !confirmCancel && !$("#review")) render();
+    if (!prev) drawMap();
+    drawDriver();
+    clearTimeout(timer);
+    if (O.status !== "done" && O.status !== "cancelled") timer = setTimeout(load, O.driver_lat != null ? 5000 : 8000);
+  } catch (e) { clearTimeout(timer); timer = setTimeout(load, 15000); }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initMap();
+  if (!id || !/^[0-9a-f-]{36}$/i.test(id)) { O = null; render(); return; }
+  load();
+});
+onLang(() => { if (loaded) render(); });
+</script>
+</body>
+</html>

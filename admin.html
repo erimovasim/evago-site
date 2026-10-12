@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Диспетчер — EVAGO</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#111111">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+/* Панель диспетчера: список заказов слева, карточка заказа справа (на телефоне — отдельный экран) */
+body{background:var(--gray)}
+.bar{position:sticky;top:0;z-index:1000;background:var(--ink);color:#fff}
+.bar .in{display:flex;align-items:center;gap:16px;height:60px;max-width:1400px;margin:0 auto;padding-inline:16px}
+.bar .logo{color:#fff;font-size:22px}
+.bar .who{margin-left:auto;font-size:13px;color:#9A9A92;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.bar button{background:none;border:1px solid #333;color:#fff;border-radius:10px;padding:7px 12px;cursor:pointer;font-size:13px;flex:none}
+.live{display:inline-flex;gap:6px;align-items:center;font-size:12px;color:#8EE6B0;flex:none}
+.live i{width:8px;height:8px;border-radius:50%;background:#3DD68C}
+.live.off{color:#FF9A90}.live.off i{background:var(--red)}
+.login{max-width:420px;margin:60px auto;background:#fff;border-radius:20px;padding:28px 22px;display:grid;gap:14px;box-shadow:var(--shadow)}
+.login h1{font-size:24px}
+.ok{background:#EAF8EF;border:1px solid #B9E7C9;border-radius:12px;padding:12px 14px;font-size:14px}
+.layout{display:grid;grid-template-columns:400px 1fr;gap:16px;max-width:1400px;margin:0 auto;padding:16px;align-items:start}
+.layout>*{min-width:0}
+.list{display:grid;gap:10px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-size:14px;font-weight:600;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tabs .n{display:inline-block;min-width:20px;padding:0 6px;border-radius:999px;background:var(--accent);color:var(--ink);font-size:12px;margin-left:6px}
+.oc{display:grid;gap:6px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;cursor:pointer;text-align:left;width:100%;border-left:5px solid var(--line)}
+.oc:hover{border-color:#cfcfc9}
+.oc[aria-current="true"]{outline:2px solid var(--ink)}
+.oc.s-new{border-left-color:var(--red)}.oc.s-accepted,.oc.s-onway,.oc.s-arrived{border-left-color:var(--accent)}.oc.s-done{border-left-color:var(--green)}
+.oc .h{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}
+.oc b{font-size:16px}
+.oc .ad{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{display:inline-block;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;white-space:nowrap}
+.p-new{background:#FFE3E0;color:#B42318}.p-accepted,.p-onway,.p-arrived{background:var(--accent-soft);color:#6B5500}.p-done{background:#E3F6EA;color:#14783C}.p-cancelled{background:#EEE;color:#666}
+.empty{background:#fff;border-radius:14px;padding:30px 20px;text-align:center;color:var(--muted)}
+.det{background:#fff;border-radius:20px;border:1px solid var(--line);overflow:hidden;position:sticky;top:76px}
+.det-map{height:280px;isolation:isolate}
+.det-in{padding:20px;display:grid;gap:16px}
+.det h2{font-size:22px}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kv div{background:var(--gray);border-radius:12px;padding:10px 12px}
+.kv small{display:block;font-size:12px;color:var(--muted)}
+.kv b{font-size:16px}
+.rows{display:grid;gap:8px}
+.rows .r{display:flex;gap:10px}
+.rows .dot{width:10px;height:10px;border-radius:50%;margin-top:7px;flex:none}
+.dot-a{background:var(--ink)}.dot-b{background:var(--accent)}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sec{border-top:1px solid var(--line);padding-top:16px;display:grid;gap:12px}
+.sec h3{font-size:16px}
+.link{display:flex;gap:8px;align-items:center;background:var(--gray);border-radius:12px;padding:10px 12px;font-size:13px}
+.link input{flex:1;min-width:0;border:0;background:none;font-size:13px;outline:0}
+.back-m{display:none}
+.apps td,.apps th{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
+.apps{width:100%;border-collapse:collapse;background:#fff}
+.tbl{overflow-x:auto;border-radius:14px;border:1px solid var(--line)}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr;padding:12px}
+  .layout.detail .list-col{display:none}
+  .layout:not(.detail) .det-col{display:none}
+  .det{position:static;border-radius:16px}
+  .back-m{display:inline-flex}
+  .kv{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="bar"><div class="in"><span class="logo">EVA<span>GO</span></span><span style="font-weight:700">Диспетчер</span>
+  <span class="live off" id="live" hidden><i></i><span>офлайн</span></span>
+  <span class="who" id="who"></span><button type="button" id="logout" hidden>Выйти</button></div></div>
+
+<!-- Вход -->
+<form class="login" id="login" hidden novalidate>
+  <h1>Вход для диспетчера</h1>
+  <label class="field"><span>Email</span><input class="input" id="em" type="email" autocomplete="username"></label>
+  <label class="field"><span>Пароль</span><input class="input" id="pw" type="password" autocomplete="current-password" minlength="6"></label>
+  <p class="err" id="lerr" hidden></p>
+  <div class="ok" id="lok" hidden></div>
+  <button class="btn btn-y btn-block" type="submit" id="lbtn">Войти</button>
+  <button class="btn btn-o btn-block" type="button" id="sbtn">Создать аккаунт</button>
+  <p class="muted" style="font-size:13px">Доступ только для почты, добавленной как диспетчер.</p>
+</form>
+
+<div class="login" id="noaccess" hidden>
+  <h1>Нет доступа</h1>
+  <p class="muted">Этот аккаунт не добавлен как диспетчер EVAGO.</p>
+</div>
+
+<!-- Панель -->
+<div class="layout" id="app" hidden>
+  <div class="list-col">
+    <div class="tabs" id="tabs" style="margin-bottom:12px"></div>
+    <div class="list" id="list"></div>
+  </div>
+  <div class="det-col" id="det"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="assets/app.js"></script>
+<script>
+LANG = "ru";
+const sb = supabase.createClient(EVAGO.supabaseUrl, EVAGO.supabaseKey);
+const ST = { new: "Новый", accepted: "Водитель назначен", onway: "В пути", arrived: "На месте", done: "Выполнен", cancelled: "Отменён" };
+const FILTERS = { active: ["new", "accepted", "onway", "arrived"], done: ["done"], cancelled: ["cancelled"], apps: [] };
+let drvM = null;
+let orders = [], apps = [], filter = "active", openId = null, dmap = null, dlayers = [], knownIds = null, channel = null;
+
+const fmtTime = d => new Date(d).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const ago = d => { const m = Math.round((Date.now() - new Date(d)) / 60000); return m < 1 ? "только что" : m < 60 ? m + " мин назад" : fmtTime(d); };
+const wa = (phone, text) => "https://wa.me/" + String(phone).replace(/\D/g, "") + (text ? "?text=" + encodeURIComponent(text) : "");
+const siteBase = () => location.href.replace(/admin\.html.*$/, "");
+
+/* ---------- Вход ---------- */
+function showErr(m) { $("#lerr").textContent = m; $("#lerr").hidden = !m; }
+$("#login").addEventListener("submit", async e => {
+  e.preventDefault(); showErr(""); $("#lok").hidden = true;
+  const { error } = await sb.auth.signInWithPassword({ email: $("#em").value.trim(), password: $("#pw").value });
+  if (error) showErr(/confirm/i.test(error.message) ? "Почта ещё не подтверждена. Откройте письмо от Supabase и нажмите ссылку." : "Неверный email или пароль.");
+});
+$("#sbtn").onclick = async () => {
+  showErr(""); $("#lok").hidden = true;
+  const em = $("#em").value.trim(), pw = $("#pw").value;
+  if (!em || pw.length < 6) { showErr("Введите email и пароль (не короче 6 символов)."); return; }
+  const { data, error } = await sb.auth.signUp({ email: em, password: pw, options: { emailRedirectTo: siteBase() + "admin.html" } });
+  if (error) { showErr(error.message); return; }
+  if (!data.session) { $("#lok").textContent = "Аккаунт создан. Подтвердите почту по ссылке из письма, затем войдите."; $("#lok").hidden = false; }
+};
+$("#logout").onclick = () => sb.auth.signOut();
+
+sb.auth.onAuthStateChange((_ev, session) => boot(session));
+
+async function boot(session) {
+  $("#login").hidden = !!session; $("#app").hidden = true; $("#noaccess").hidden = true;
+  $("#logout").hidden = !session; $("#who").textContent = session ? session.user.email : ""; $("#live").hidden = !session;
+  if (!session) { if (channel) { sb.removeChannel(channel); channel = null; } return; }
+  const { data: isAdmin } = await sb.rpc("is_admin");
+  if (!isAdmin) { $("#noaccess").hidden = false; return; }
+  $("#app").hidden = false;
+  openId = (location.hash.match(/^#o-([0-9a-f-]{36})$/) || [])[1] || null;
+  await loadAll();
+  subscribe();
+  if ("Notification" in window && Notification.permission === "default") Notification.requestPermission().catch(() => {});
+}
+
+/* ---------- Данные ---------- */
+async function loadAll() {
+  const [o, a] = await Promise.all([
+    sb.from("orders").select("*").order("created_at", { ascending: false }).limit(300),
+    sb.from("driver_applications").select("*").order("created_at", { ascending: false }).limit(200)
+  ]);
+  if (o.data) {
+    const fresh = o.data.filter(x => x.status === "new" && knownIds && !knownIds.has(x.id));
+    if (fresh.length) alertNew(fresh[0]);
+    knownIds = new Set(o.data.map(x => x.id));
+    orders = o.data;
+  }
+  if (a.data) apps = a.data;
+  renderTabs(); renderList(); renderDetail();
+}
+function subscribe() {
+  if (channel) return;
+  channel = sb.channel("evago-admin")
+    .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadAll())
+    .on("postgres_changes", { event: "*", schema: "public", table: "driver_applications" }, () => loadAll())
+    .subscribe(st => { const ok = st === "SUBSCRIBED"; $("#live").classList.toggle("off", !ok); $("#live span").textContent = ok ? "онлайн" : "офлайн"; });
+  setInterval(loadAll, 20000);
+}
+function alertNew(o) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [0, .25, .5].forEach(t0 => { const os = ctx.createOscillator(), g = ctx.createGain(); os.frequency.value = 880; os.connect(g); g.connect(ctx.destination); g.gain.setValueAtTime(.2, ctx.currentTime + t0); os.start(ctx.currentTime + t0); os.stop(ctx.currentTime + t0 + .15); });
+  } catch (e) {}
+  try { if (Notification.permission === "granted") new Notification("EVAGO: новый заказ", { body: svcById(o.service).ru[0] + " · " + o.from_address }); } catch (e) {}
+  document.title = "● Новый заказ — EVAGO";
+  setTimeout(() => document.title = "Диспетчер — EVAGO", 8000);
+}
+
+/* ---------- Список ---------- */
+function renderTabs() {
+  const cnt = k => k === "apps" ? apps.filter(a => a.status === "new").length : orders.filter(o => FILTERS[k].includes(o.status)).length;
+  const names = { active: "Активные", done: "Выполненные", cancelled: "Отменённые", apps: "Заявки водителей" };
+  $("#tabs").innerHTML = Object.keys(names).map(k => `<button type="button" data-f="${k}" aria-pressed="${k === filter}">${names[k]}${cnt(k) && (k === "active" || k === "apps") ? `<span class="n">${cnt(k)}</span>` : ""}</button>`).join("");
+  $$("#tabs button").forEach(b => b.onclick = () => { filter = b.dataset.f; renderTabs(); renderList(); });
+}
+function renderList() {
+  const L_ = $("#list");
+  if (filter === "apps") {
+    L_.innerHTML = apps.length ? `<div class="tbl"><table class="apps"><thead><tr><th>Дата</th><th>ФИО</th><th>Телефон</th><th>Эвакуатор</th><th>Госномер</th><th></th></tr></thead><tbody>${apps.map(a => `<tr><td>${fmtTime(a.created_at)}</td><td><b>${esc(a.full_name)}</b><br><span class="muted">${esc(a.city || "")}</span></td><td><a href="tel:${esc(a.phone)}">${esc(a.phone)}</a><br><a href="${wa(a.phone)}" target="_blank" rel="noopener">WhatsApp</a></td><td>${esc(a.truck_type)}</td><td>${esc(a.plate || "—")}</td><td>${a.status === "new" ? `<button class="btn btn-sm btn-o" data-app="${a.id}">Обработана</button>` : `<span class="pill p-done">обработана</span>`}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">Заявок пока нет</div>`;
+    $$("[data-app]").forEach(b => b.onclick = async () => { b.disabled = true; await sb.from("driver_applications").update({ status: "done" }).eq("id", b.dataset.app); loadAll(); });
+    $("#det").innerHTML = ""; $("#app").classList.remove("detail");
+    return;
+  }
+  const list = orders.filter(o => FILTERS[filter].includes(o.status));
+  L_.innerHTML = list.length ? list.map(o => {
+    const s = svcById(o.service);
+    return `<button type="button" class="oc s-${o.status}" data-id="${o.id}" aria-current="${o.id === openId}">
+      <span class="h"><span>№ ${o.id.slice(0, 8).toUpperCase()} · ${ago(o.created_at)}</span><span class="pill p-${o.status}">${ST[o.status]}</span></span>
+      <b>${esc(s.ru[0])} · ${esc(carById(o.car_type).ru)}${o.price_est ? " · ≈ " + money(o.final_price || o.price_est) : ""}</b>
+      <span class="ad">● ${esc(o.from_address)}</span>${o.to_address ? `<span class="ad muted">→ ${esc(o.to_address)}</span>` : ""}
+      <span class="h"><span>${esc(o.client_name || "Без имени")} · ${esc(o.phone)}</span><span>${o.driver_name ? "🚚 " + esc(o.driver_name) : ""}</span></span>
+    </button>`;
+  }).join("") : `<div class="empty">${filter === "active" ? "Активных заказов нет. Новые появятся здесь сами, со звуком." : "Пусто"}</div>`;
+  $$(".oc").forEach(b => b.onclick = () => openOrder(b.dataset.id));
+}
+
+/* ---------- Заказ ---------- */
+function openOrder(id) { openId = id; history.replaceState(null, "", id ? "#o-" + id : location.pathname); renderList(); renderDetail(true); if (id) window.scrollTo({ top: 0 }); }
+window.addEventListener("hashchange", () => { openId = (location.hash.match(/^#o-([0-9a-f-]{36})$/) || [])[1] || null; renderList(); renderDetail(true); });
+
+let lastDetailKey = "";
+function renderDetail(force) {
+  const box = $("#det"), o = orders.find(x => x.id === openId);
+  $("#app").classList.toggle("detail", !!o);
+  if (!o) { box.innerHTML = window.innerWidth > 900 && filter !== "apps" ? `<div class="empty">Выберите заказ слева</div>` : ""; lastDetailKey = ""; return; }
+  const { driver_lat, driver_lng, driver_seen_at, updated_at, ...rest } = o;
+  const key = JSON.stringify(rest);
+  if (!force && key === lastDetailKey) { updateDriverOnMap(o); return; }
+  // не перерисовываем форму, пока диспетчер её заполняет
+  if (!force && box.contains(document.activeElement) && document.activeElement.matches("input,textarea")) { updateDriverOnMap(o); return; }
+  lastDetailKey = key;
+  const s = svcById(o.service), car = carById(o.car_type);
+  const driveLink = o.driver_token ? `${siteBase()}drive.html?id=${o.id}&k=${o.driver_token}` : "";
+  const trackLink = `${siteBase()}track.html?id=${o.id}`;
+  const active = ["new", "accepted", "onway", "arrived"].includes(o.status);
+  box.innerHTML = `<div class="det">
+    <div class="det-map" id="dmap"></div>
+    <div class="det-in">
+      <button class="btn btn-o btn-sm back-m" type="button" id="back">← К списку</button>
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap">
+        <div><span class="muted" style="font-size:13px">№ ${o.id.slice(0, 8).toUpperCase()} · ${fmtTime(o.created_at)}</span><h2>${esc(s.ru[0])} · ${esc(car.ru)}</h2></div>
+        <span class="pill p-${o.status}">${ST[o.status]}</span>
+      </div>
+      <div class="rows"><div class="r"><span class="dot dot-a"></span><span>${esc(o.from_address)}</span></div>${o.to_address ? `<div class="r"><span class="dot dot-b"></span><span>${esc(o.to_address)}</span></div>` : ""}</div>
+      <div class="kv">
+        <div><small>Клиент</small><b>${esc(o.client_name || "—")}</b></div>
+        <div><small>Расстояние</small><b class="num">${o.distance_km ? o.distance_km + " км" : "—"}</b></div>
+        <div><small>Цена (оценка)</small><b class="num">${o.price_est ? money(o.price_est) : "—"}</b></div>
+      </div>
+      ${o.comment ? `<div class="kv" style="grid-template-columns:1fr"><div><small>Комментарий</small>${esc(o.comment)}</div></div>` : ""}
+      <div class="acts">
+        <a class="btn btn-dark btn-sm" href="tel:${esc(o.phone)}">📞 ${esc(o.phone)}</a>
+        <a class="btn btn-o btn-sm" href="${wa(o.phone, "Здравствуйте! Это EVAGO, по вашему заказу №" + o.id.slice(0, 8).toUpperCase() + ".")}" target="_blank" rel="noopener">WhatsApp клиенту</a>
+        <a class="btn btn-o btn-sm" href="${trackLink}" target="_blank" rel="noopener">Страница клиента</a>
+      </div>
+
+      ${active ? `<form class="sec" id="assign" novalidate>
+        <h3>${o.driver_token ? "Водитель" : "Назначить водителя"}</h3>
+        <div class="grid2">
+          <label class="field"><span>Имя водителя</span><input class="input" id="a-name" value="${esc(o.driver_name || "")}" maxlength="60"></label>
+          <label class="field"><span>Телефон водителя</span><input class="input num" id="a-phone" type="tel" value="${esc(o.driver_phone || "")}" placeholder="+7 7__ ___ __ __"></label>
+          <label class="field"><span>Машина, госномер</span><input class="input" id="a-car" value="${esc(o.driver_car || "")}" maxlength="60" placeholder="Hyundai HD78, 123 ABC 02"></label>
+          <label class="field"><span>Приедет через, мин</span><input class="input num" id="a-eta" type="number" min="1" max="300" value="${o.eta_min || ""}"></label>
+          <label class="field"><span>Итоговая цена, ₸</span><input class="input num" id="a-price" type="number" min="0" step="500" value="${o.final_price || ""}" placeholder="${o.price_est || ""}"></label>
+        </div>
+        <p class="err" id="a-err" hidden></p>
+        <button class="btn btn-y" type="submit">${o.driver_token ? "Сохранить" : "Назначить и принять заказ"}</button>
+      </form>` : ""}
+
+      ${driveLink && active ? `<div class="sec"><h3>Ссылка для водителя</h3>
+        <p class="muted" style="font-size:14px">Отправьте водителю. По ней он видит заказ, звонит клиенту, меняет статус, а клиент видит его на карте.</p>
+        <div class="link"><input readonly value="${driveLink}" id="dl"><button class="btn btn-sm btn-o" type="button" id="copy-dl">Копировать</button></div>
+        ${o.driver_phone ? `<a class="btn btn-o btn-sm" href="${wa(o.driver_phone, "EVAGO заказ №" + o.id.slice(0, 8).toUpperCase() + "\n" + o.from_address + (o.to_address ? " → " + o.to_address : "") + "\nКлиент: " + (o.client_name || "") + " " + o.phone + "\n" + driveLink)}" target="_blank" rel="noopener">Отправить водителю в WhatsApp</a>` : ""}
+        <p class="muted" style="font-size:13px">${o.driver_seen_at ? "Водитель на связи: " + ago(o.driver_seen_at) : "Водитель ещё не открыл ссылку"}</p>
+      </div>` : ""}
+
+      ${active ? `<div class="sec"><h3>Статус</h3><div class="acts">
+        ${o.status !== "new" ? ["accepted", "onway", "arrived", "done"].map(st => `<button class="btn btn-sm ${o.status === st ? "btn-dark" : "btn-o"}" type="button" data-st="${st}">${ST[st]}</button>`).join("") : ""}
+        <button class="btn btn-sm btn-red" type="button" id="cancel">Отменить заказ</button></div>
+        <div id="cc"></div></div>` : ""}
+      ${o.rating ? `<div class="sec"><h3>Оценка клиента</h3><b style="color:var(--accent-2);font-size:22px">${"★".repeat(o.rating)}</b>${o.review ? `<p>${esc(o.review)}</p>` : ""}</div>` : ""}
+    </div></div>`;
+
+  $("#back").onclick = () => openOrder(null);
+  drawDetailMap(o);
+  if ($("#copy-dl")) $("#copy-dl").onclick = async () => { try { await navigator.clipboard.writeText($("#dl").value); $("#copy-dl").textContent = "Скопировано"; } catch (e) { $("#dl").select(); } };
+  $$("[data-st]").forEach(b => b.onclick = () => setStatus(o, b.dataset.st));
+  if ($("#cancel")) $("#cancel").onclick = () => {
+    $("#cc").innerHTML = `<div class="ok" style="background:#FFF0EF;border-color:#FFD0CC;display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">Точно отменить?<button class="btn btn-sm btn-o" type="button" id="cn">Нет</button><button class="btn btn-sm" style="background:var(--red);color:#fff" type="button" id="cy">Да, отменить</button></div>`;
+    $("#cn").onclick = () => $("#cc").innerHTML = "";
+    $("#cy").onclick = () => setStatus(o, "cancelled");
+  };
+  if ($("#assign")) $("#assign").addEventListener("submit", async e => {
+    e.preventDefault();
+    const name = $("#a-name").value.trim(), ph = normPhone($("#a-phone").value);
+    if (!name || !ph) { $("#a-err").textContent = "Укажите имя и телефон водителя (+7 и 10 цифр)."; $("#a-err").hidden = false; return; }
+    const upd = { driver_name: name, driver_phone: ph, driver_car: $("#a-car").value.trim() || null,
+      eta_min: +$("#a-eta").value || null, final_price: +$("#a-price").value || null };
+    if (!o.driver_token) upd.driver_token = crypto.randomUUID();
+    if (o.status === "new") upd.status = "accepted";
+    const { error } = await sb.from("orders").update(upd).eq("id", o.id);
+    if (error) { $("#a-err").textContent = "Не сохранилось: " + error.message; $("#a-err").hidden = false; return; }
+    document.activeElement && document.activeElement.blur();
+    await loadAll(); renderDetail(true);
+  });
+}
+async function setStatus(o, st) {
+  const { error } = await sb.from("orders").update({ status: st }).eq("id", o.id);
+  if (!error) { await loadAll(); renderDetail(true); }
+}
+function drawDetailMap(o) {
+  if (dmap) { dmap.remove(); dmap = null; drvM = null; }
+  dmap = L.map("dmap", { zoomControl: false }).setView(EVAGO.center, 12);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(dmap);
+  const pin = cls => L.divIcon({ className: "", html: `<div class="pin ${cls}"></div>`, iconSize: [30, 30], iconAnchor: [15, 36] });
+  const pts = [];
+  if (o.from_lat) { L.marker([o.from_lat, o.from_lng], { icon: pin("pin-a") }).addTo(dmap); pts.push([o.from_lat, o.from_lng]); }
+  if (o.to_lat) { L.marker([o.to_lat, o.to_lng], { icon: pin("pin-b") }).addTo(dmap); pts.push([o.to_lat, o.to_lng]); }
+  if (o.driver_lat) pts.push([o.driver_lat, o.driver_lng]);
+  updateDriverOnMap(o);
+  if (pts.length) dmap.fitBounds(L.latLngBounds(pts).pad(.3), { maxZoom: 15 });
+}
+function updateDriverOnMap(o) {
+  if (!dmap) return;
+  if (drvM) { dmap.removeLayer(drvM); drvM = null; }
+  if (o.driver_lat) drvM = L.marker([o.driver_lat, o.driver_lng], { icon: L.divIcon({ className: "", html: '<div class="truck-dot"></div>', iconSize: [34, 34], iconAnchor: [17, 17] }) }).addTo(dmap);
+}
+</script>
+</body>
+</html>

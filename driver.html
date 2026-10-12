@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Жүргізушілерге — EVAGO</title>
+<meta name="description" content="Эвакуаторыңыз бар ма? EVAGO-мен жұмыс істеңіз.">
+<meta name="theme-color" content="#FFD200">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+.dr{display:grid;grid-template-columns:1fr 460px;gap:48px;padding-block:56px 80px;align-items:start}
+.dr>*{min-width:0}
+.dr h1{font-size:clamp(32px,4.4vw,52px);font-weight:800;margin-top:12px}
+.dr .lead{font-size:18px;color:var(--muted);margin-top:16px;max-width:32em}
+.checks{list-style:none;padding:0;margin:28px 0 0;display:grid;gap:14px}
+.checks li{display:flex;gap:12px;align-items:flex-start;font-size:17px}
+.checks li::before{content:"";flex:none;width:24px;height:24px;border-radius:50%;background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23111' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12l4 4 8-8'/%3E%3C/svg%3E") center/14px no-repeat}
+.form{border:1px solid var(--line);border-radius:20px;padding:24px;display:grid;gap:16px;box-shadow:var(--shadow);background:var(--white)}
+.ok{background:#EAF8EF;border:1px solid #B9E7C9;border-radius:14px;padding:18px;font-weight:600}
+@media (max-width:900px){.dr{grid-template-columns:1fr;gap:32px;padding-block:32px 60px}}
+</style>
+</head>
+<body data-page="driver">
+<header id="site-header"></header>
+<main class="wrap dr">
+  <div>
+    <span class="eyebrow" data-i="drv_eyebrow">Жүргізушілерге</span>
+    <h1 data-i="dr_title">EVAGO жүргізушісі болу</h1>
+    <p class="lead" data-i="dr_lead"></p>
+    <ul class="checks"><li data-i="d1"></li><li data-i="d2"></li><li data-i="d3"></li></ul>
+  </div>
+  <form class="form" id="f" novalidate>
+    <label class="field"><span data-i="dr_name"></span><input class="input" id="fn" maxlength="80" autocomplete="name"></label>
+    <label class="field"><span data-i="dr_phone"></span><span class="phone-in"><b>+7</b><input id="ph" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="700 000 00 00" class="num"></span></label>
+    <label class="field"><span data-i="dr_truck"></span><select class="input" id="tr"></select></label>
+    <label class="field"><span data-i="dr_plate"></span><input class="input" id="pl" maxlength="20" placeholder="123 ABC 02"></label>
+    <label class="field"><span data-i="dr_city"></span><input class="input" id="ct" maxlength="60" value="Алматы"></label>
+    <p class="err" id="err" hidden></p>
+    <button class="btn btn-y btn-block" type="submit" id="send"><span data-i="dr_send"></span></button>
+    <div class="ok" id="ok" data-i="dr_ok" hidden></div>
+  </form>
+</main>
+<footer id="contact"></footer>
+<script src="assets/app.js"></script>
+<script>
+function renderTrucks() {
+  const v = $("#tr").value;
+  $("#tr").innerHTML = ["tr1", "tr2", "tr3", "tr4"].map(k => `<option value="${k}">${t(k)}</option>`).join("");
+  if (v) $("#tr").value = v;
+}
+phoneMask($("#ph"));
+$("#f").addEventListener("submit", async e => {
+  e.preventDefault();
+  const phone = normPhone($("#ph").value), name = $("#fn").value.trim();
+  const err = $("#err");
+  if (name.length < 2 || !phone) { err.textContent = !phone && name.length >= 2 ? t("o_phone_err") : t("dr_need"); err.hidden = false; return; }
+  err.hidden = true;
+  const b = $("#send"); b.disabled = true;
+  try {
+    await rpc("apply_driver", { p_full_name: name, p_phone: phone, p_truck_type: I18N.ru[$("#tr").value], p_plate: $("#pl").value, p_city: $("#ct").value });
+    $$("#f .field, #send").forEach(x => x.hidden = true); $("#ok").hidden = false;
+  } catch (x) { err.textContent = t("dr_err"); err.hidden = false; b.disabled = false; }
+});
+document.addEventListener("DOMContentLoaded", renderTrucks);
+onLang(renderTrucks);
+</script>
+</body>
+</html>

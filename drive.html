@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="kk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Жүргізуші — EVAGO</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#111111">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+/* Страница водителя: тёмная тема как в Driver App */
+body{background:#0E0E0E;color:#F5F5F2}
+.top{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #222}
+.top .logo{color:#fff}
+.lang{border-color:#333}.lang button{color:#9A9A92}.lang button[aria-pressed="true"]{background:var(--accent);color:var(--ink)}
+#dmap{height:42vh;min-height:260px;isolation:isolate}
+.sheet{background:#161616;border-radius:22px 22px 0 0;margin-top:-20px;position:relative;z-index:500;padding:20px 16px calc(28px + env(safe-area-inset-bottom,0px));display:grid;gap:16px;max-width:640px;margin-inline:auto}
+.gps{display:flex;gap:10px;align-items:center;font-size:14px;border-radius:12px;padding:10px 12px;background:#1F2A22;color:#8EE6B0}
+.gps i{width:9px;height:9px;border-radius:50%;background:#3DD68C;flex:none;animation:bl 1.4s infinite}
+.gps.off{background:#2A1C1B;color:#FF9A90}.gps.off i{background:var(--red);animation:none}
+@keyframes bl{50%{opacity:.3}}
+.st{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.rows{display:grid;gap:10px;font-size:16px}
+.rows .r{display:flex;gap:10px}
+.rows .dot{width:11px;height:11px;border-radius:50%;margin-top:6px;flex:none}
+.dot-a{background:#fff}.dot-b{background:var(--accent)}
+.box{background:#1F1F1F;border-radius:14px;padding:14px;display:grid;gap:4px}
+.box small{color:#9A9A92;font-size:13px}
+.box b{font-size:17px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn-g{background:#232323;color:#fff;border-color:#333}
+.btn-big{padding:18px;font-size:17px;font-weight:700}
+.note{font-size:13px;color:#9A9A92;text-align:center}
+.center{padding:60px 20px;text-align:center;display:grid;gap:16px;justify-items:center}
+</style>
+</head>
+<body data-page="drive">
+<div class="top"><span class="logo">EVA<span>GO</span></span>
+  <div class="lang" role="group" aria-label="Тіл / Язык"><button type="button" data-lang="kz">KZ</button><button type="button" data-lang="ru">RU</button></div></div>
+<div id="dmap"></div>
+<main class="sheet" id="sheet"><p class="note">…</p></main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="assets/app.js"></script>
+<script>
+const qs = new URLSearchParams(location.search);
+const ID = qs.get("id"), TOKEN = qs.get("k");
+let O = null, map, me = null, lastPing = 0, watchId = null, gpsOk = null, wake = null, timer;
+const NEXT = { accepted: "onway", onway: "arrived", arrived: "done" };
+const NEXT_LABEL = { onway: "dv_onway", arrived: "dv_arrived", done: "dv_done" };
+const pin = cls => L.divIcon({ className: "", html: `<div class="pin ${cls}"></div>`, iconSize: [30, 30], iconAnchor: [15, 36] });
+
+function navUrl(lat, lng) { return `https://yandex.kz/maps/?rtext=~${lat},${lng}&rtt=auto`; }
+function gis2Url(lat, lng) { return `https://2gis.kz/almaty/directions/points/%7C${lng}%2C${lat}`; }
+
+function render() {
+  $$("[data-lang]").forEach(b => { b.setAttribute("aria-pressed", b.dataset.lang === LANG); b.onclick = () => { setLang(b.dataset.lang); render(); }; });
+  const sh = $("#sheet");
+  if (!O) { sh.innerHTML = `<div class="center"><b>${t("dv_bad")}</b></div>`; return; }
+  const active = ["accepted", "onway", "arrived"].includes(O.status);
+  if (!active) { sh.innerHTML = `<div class="center"><b style="font-size:22px">${t(O.status === "done" ? "dv_finished" : "st_cancelled")}</b><span class="note">№ ${esc(O.id.slice(0, 8).toUpperCase())}</span></div>`; stopGps(); return; }
+  const svc = svcById(O.service), car = carById(O.car_type), price = O.final_price || O.price_est;
+  // Куда ехать сейчас: до клиента, а после "на месте" — в точку назначения
+  const target = (O.status === "arrived" && O.to_lat) ? [O.to_lat, O.to_lng] : [O.from_lat, O.from_lng];
+  const nx = NEXT[O.status];
+  sh.innerHTML = `
+    <div class="gps ${gpsOk === false ? "off" : ""}"><i></i><span>${t(gpsOk === false ? "dv_gps_off" : "dv_gps_on")}</span></div>
+    <div><div class="st">${t("st_" + O.status)}</div><h1 style="font-size:24px;margin-top:6px">${esc(svc[LANG][0])} · ${esc(car[LANG])}</h1></div>
+    <div class="rows">
+      <div class="r"><span class="dot dot-a"></span><span>${esc(O.from_address)}</span></div>
+      ${O.to_address ? `<div class="r"><span class="dot dot-b"></span><span>${esc(O.to_address)}</span></div>` : ""}
+    </div>
+    <div class="two">
+      <div class="box"><small>${t("dv_client")}</small><b>${esc(O.client_name || "—")}</b><span class="num">${esc(O.phone)}</span></div>
+      <div class="box"><small>${t("dv_price")}${O.distance_km ? " · " + O.distance_km + " " + t("o_km") : ""}</small><b class="num">${price ? (O.final_price ? "" : "≈ ") + money(price) : "—"}</b></div>
+    </div>
+    ${O.comment ? `<div class="box"><small>${t("dv_comment")}</small><span>${esc(O.comment)}</span></div>` : ""}
+    <div class="two">
+      <a class="btn btn-g" href="tel:${esc(O.phone)}">${t("dv_call")}</a>
+      <a class="btn btn-g" href="${navUrl(target[0], target[1])}" target="_blank" rel="noopener">${t("dv_nav")} · Яндекс</a>
+    </div>
+    <a class="btn btn-g btn-sm" href="${gis2Url(target[0], target[1])}" target="_blank" rel="noopener">${t("dv_nav")} · 2GIS</a>
+    ${nx ? `<button class="btn btn-y btn-big" type="button" id="next">${t(NEXT_LABEL[nx])}</button>` : ""}
+    <p class="note">${t("dv_keep")}</p>`;
+  if (nx) $("#next").onclick = async () => {
+    const b = $("#next"); b.disabled = true;
+    try { await rpc("driver_set_status", { p_id: ID, p_token: TOKEN, p_status: nx }); await load(); } catch (e) { b.disabled = false; }
+  };
+}
+
+function drawMap() {
+  if (!map) {
+    map = L.map("dmap", { zoomControl: false }).setView(EVAGO.center, 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
+  }
+  const pts = [];
+  if (O.from_lat) { L.marker([O.from_lat, O.from_lng], { icon: pin("pin-a") }).addTo(map); pts.push([O.from_lat, O.from_lng]); }
+  if (O.to_lat) { L.marker([O.to_lat, O.to_lng], { icon: pin("pin-b") }).addTo(map); pts.push([O.to_lat, O.to_lng]); }
+  if (pts.length) map.fitBounds(L.latLngBounds(pts).pad(.5), { maxZoom: 15 });
+}
+
+function startGps() {
+  if (watchId !== null || !navigator.geolocation) { if (!navigator.geolocation) { gpsOk = false; render(); } return; }
+  watchId = navigator.geolocation.watchPosition(pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    if (gpsOk !== true) { gpsOk = true; render(); }
+    if (!me) me = L.marker([lat, lng], { icon: L.divIcon({ className: "", html: '<div class="truck-dot"></div>', iconSize: [34, 34], iconAnchor: [17, 17] }), interactive: false }).addTo(map);
+    else me.setLatLng([lat, lng]);
+    if (Date.now() - lastPing > 8000) { lastPing = Date.now(); rpc("driver_ping", { p_id: ID, p_token: TOKEN, p_lat: lat, p_lng: lng }).catch(() => {}); }
+  }, () => { gpsOk = false; render(); }, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+  if ("wakeLock" in navigator) navigator.wakeLock.request("screen").then(w => wake = w).catch(() => {});
+}
+function stopGps() { if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; } if (wake) { wake.release().catch(() => {}); wake = null; } }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && watchId !== null && "wakeLock" in navigator) navigator.wakeLock.request("screen").then(w => wake = w).catch(() => {}); });
+
+async function load() {
+  clearTimeout(timer);
+  try {
+    const rows = await rpc("driver_get_order", { p_id: ID, p_token: TOKEN });
+    const first = !O;
+    O = rows && rows[0] || null;
+    render();
+    if (O && first) drawMap();
+    if (O && ["accepted", "onway", "arrived"].includes(O.status)) { startGps(); timer = setTimeout(load, 15000); }
+  } catch (e) { timer = setTimeout(load, 15000); }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (!/^[0-9a-f-]{36}$/i.test(ID || "") || !/^[0-9a-f-]{36}$/i.test(TOKEN || "")) { render(); return; }
+  load();
+});
+</script>
+</body>
+</html>
