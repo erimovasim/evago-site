@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#FFD200">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=6">
+<link rel="stylesheet" href="assets/style.css?v=7">
 <style>
 .dr{display:grid;grid-template-columns:1fr 460px;gap:48px;padding-block:56px 80px;align-items:start}
 .dr>*{min-width:0}
@@ -43,7 +43,7 @@
   </form>
 </main>
 <footer id="contact"></footer>
-<script src="assets/app.js?v=6"></script>
+<script src="assets/app.js?v=7"></script>
 <script>
 function renderTrucks() {
   const v = $("#tr").value;
@@ -61,6 +61,8 @@ $("#f").addEventListener("submit", async e => {
   try {
     await rpc("apply_driver", { p_full_name: name, p_phone: phone, p_truck_type: I18N.ru[$("#tr").value], p_plate: $("#pl").value, p_city: $("#ct").value });
     $$("#f .field, #send").forEach(x => x.hidden = true); $("#ok").hidden = false;
+    const txt = `EVAGO — жүргізуші өтінімі\n${name}\n${phone}\n${t($("#tr").value)}\n${$("#pl").value}\n${$("#ct").value}`;
+    $("#ok").insertAdjacentHTML("afterend", `<a class="btn btn-block" style="background:#25D366;color:#06210F" target="_blank" rel="noopener" href="https://wa.me/${EVAGO.whatsapp}?text=${encodeURIComponent(txt)}">WhatsApp-қа да жіберу</a>`);
   } catch (x) { err.textContent = t("dr_err"); err.hidden = false; b.disabled = false; }
 });
 document.addEventListener("DOMContentLoaded", renderTrucks);

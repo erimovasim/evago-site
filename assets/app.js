@@ -9,8 +9,8 @@ const EVAGO = {
   supabaseKey: "sb_publishable_MbzxcCvlznIyncBDYPKwIA_5IqnaGZA",
 
   // Контакты. Пока пусто — на сайте не показываются. Впиши настоящие:
-  phone: "",        // пример: "+7 777 123 45 67"
-  whatsapp: "",     // пример: "77771234567" (без + и пробелов)
+  phone: "+7 707 271 40 75",
+  whatsapp: "77072714075",   // на этот WhatsApp приходят все заказы
   instagram: "",    // пример: "evago.kz"
 
   city: { kz: "Алматы", ru: "Алматы" },
@@ -74,7 +74,7 @@ const I18N = {
     app_h: "Көмек — бір батырма қашықтықта.", app_p: "EVAGO қосымшасы әзірленуде. Әзірге тапсырысты осы сайт арқылы беріңіз — бәрі телефоннан да жұмыс істейді.",
     p1: "Жылдам", p1d: "Тапсырыс бір минутта рәсімделеді", p2: "Сенімді", p2d: "Тексерілген жүргізушілер", p3: "Қолайлы", p3d: "Баға алдын ала белгілі",
     soon: "Жақында",
-    contact_h: "Байланыс", contact_order: "Тапсырысты сайт арқылы беріңіз — диспетчер сізге өзі хабарласады.",
+    contact_h: "Байланыс", cb_h: "Сұрағыңыз бар ма? Жазыңыз", cb_p: "WhatsApp-қа жазыңыз немесе қоңырау шалыңыз — тәулік бойы жауап береміз.", wa_hello: "Сәлеметсіз бе! EVAGO сайтынан жазып отырмын.", contact_order: "Тапсырысты сайт арқылы беріңіз — диспетчер сізге өзі хабарласады.",
     copy: "Көшіру", copied: "Көшірілді", rights: "Барлық құқықтар қорғалған", slogan: "Жолда сенімді көмек әрқашан жақында.",
     qo_note: "Келесі бетте «Мен осындамын» батырмасымен орныңызды бір басумен көрсетесіз",
     active_order: "Сізде белсенді тапсырыс бар", open: "Ашу",
@@ -106,6 +106,7 @@ const I18N = {
     st_done_d: "EVAGO-ны таңдағаныңызға рахмет!", st_cancelled_d: "Қажет болса, жаңа тапсырыс беріңіз.",
     t_driver: "Жүргізуші", t_eta: "Келу уақыты", t_call: "Қоңырау шалу", t_cancel: "Тапсырысты тоқтату", t_cancel_q: "Тапсырысты шынымен тоқтатасыз ба?", t_yes: "Иә, тоқтату", t_no_btn: "Жоқ",
     t_rate: "Жүргізушіні бағалаңыз", t_review_ph: "Пікір жазу (міндетті емес)", t_send: "Жіберу", t_thanks: "Бағаңызға рахмет!",
+    t_wa_last: "Соңғы қадам: тапсырысты WhatsApp-қа жіберіңіз", t_wa_q: "Тезірек керек пе? WhatsApp-қа жазыңыз", t_wa_d: "Мәтін дайын — тек «Жіберу» басыңыз. Диспетчер бірден көреді.", t_wa_btn: "WhatsApp-қа жіберу",
     t_updated: "Автоматты түрде жаңарады", t_saved: "Бұл бетті сақтап қойыңыз — тапсырыс күйін осы жерден көресіз.",
     // driver page
     dr_title: "EVAGO жүргізушісі болу", dr_lead: "Өтінім қалдырыңыз — біз сізге хабарласып, құжаттарды тексеріп, жұмысқа қосамыз.",
@@ -146,7 +147,7 @@ const I18N = {
     app_h: "Помощь — на расстоянии одной кнопки.", app_p: "Приложение EVAGO в разработке. Пока оформляйте заказ на сайте — всё работает и с телефона.",
     p1: "Быстро", p1d: "Заказ оформляется за минуту", p2: "Надёжно", p2d: "Проверенные водители", p3: "Удобно", p3d: "Цена известна заранее",
     soon: "Скоро",
-    contact_h: "Контакты", contact_order: "Оформите заказ на сайте — диспетчер сам вам позвонит.",
+    contact_h: "Контакты", cb_h: "Есть вопрос? Напишите нам", cb_p: "Пишите в WhatsApp или звоните — отвечаем круглосуточно.", wa_hello: "Здравствуйте! Пишу с сайта EVAGO.", contact_order: "Оформите заказ на сайте — диспетчер сам вам позвонит.",
     copy: "Копировать", copied: "Скопировано", rights: "Все права защищены", slogan: "Надёжная помощь на дороге всегда рядом.",
     qo_note: "На следующем шаге кнопка «Я здесь» покажет ваше место в одно касание",
     active_order: "У вас есть активный заказ", open: "Открыть",
@@ -176,6 +177,7 @@ const I18N = {
     st_done_d: "Спасибо, что выбрали EVAGO!", st_cancelled_d: "Если нужно, оформите новый заказ.",
     t_driver: "Водитель", t_eta: "Приедет через", t_call: "Позвонить", t_cancel: "Отменить заказ", t_cancel_q: "Точно отменить заказ?", t_yes: "Да, отменить", t_no_btn: "Нет",
     t_rate: "Оцените водителя", t_review_ph: "Напишите отзыв (необязательно)", t_send: "Отправить", t_thanks: "Спасибо за оценку!",
+    t_wa_last: "Последний шаг: отправьте заказ в WhatsApp", t_wa_q: "Срочно? Напишите в WhatsApp", t_wa_d: "Текст уже готов — просто нажмите «Отправить». Диспетчер увидит сразу.", t_wa_btn: "Отправить в WhatsApp",
     t_updated: "Обновляется автоматически", t_saved: "Сохраните эту страницу — здесь виден статус заказа.",
     dr_title: "Стать водителем EVAGO", dr_lead: "Оставьте заявку — мы свяжемся, проверим документы и подключим вас.",
     dr_name: "ФИО", dr_phone: "Телефон", dr_truck: "Тип эвакуатора", dr_plate: "Госномер", dr_city: "Город",
@@ -259,7 +261,7 @@ function renderChrome() {
         <a href="index.html#services">${t("nav_services")}</a>
         <a href="index.html#tariffs">${t("nav_tariffs")}</a>
         <a href="driver.html" ${page === "driver" ? 'aria-current="page"' : ""}>${t("nav_drivers")}</a>
-        <a href="#contact">${t("nav_contact")}</a>
+        <a href="index.html#contacts">${t("nav_contact")}</a>
       </nav>
       <div class="nav-r">
         <div class="lang" role="group" aria-label="Тіл / Язык">
@@ -271,7 +273,7 @@ function renderChrome() {
       </div>
     </div>
     <div class="wrap mobile-menu">
-      <a href="index.html">${t("nav_home")}</a><a href="index.html#services">${t("nav_services")}</a><a href="index.html#tariffs">${t("nav_tariffs")}</a><a href="driver.html">${t("nav_drivers")}</a><a href="#contact">${t("nav_contact")}</a>
+      <a href="index.html">${t("nav_home")}</a><a href="index.html#services">${t("nav_services")}</a><a href="index.html#tariffs">${t("nav_tariffs")}</a><a href="driver.html">${t("nav_drivers")}</a><a href="index.html#contacts">${t("nav_contact")}</a>
       <a class="btn btn-y" href="order.html">${t("call")}</a>
     </div>`;
   $$("[data-lang]").forEach(b => b.onclick = () => setLang(b.dataset.lang));

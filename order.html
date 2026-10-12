@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="assets/style.css?v=6">
+<link rel="stylesheet" href="assets/style.css?v=7">
 <style>
 /* Заказ: фото-шапка как на главной, карточка формы поверх, маленькая карта раскрывается по нажатию */
 body{background:var(--gray)}
@@ -119,7 +119,7 @@ body{background:var(--gray)}
         </div>
       </div>
       <p class="hint" id="hint" hidden></p>
-      <div class="mini small" id="mini" hidden>
+      <div class="mini small" id="mini">
         <div id="map"></div>
         <button class="open" type="button" id="open-map" data-i="o_map_open">Картадан дәлдеу</button>
         <div class="bigtop" data-i="o_map_tap"></div>
@@ -167,7 +167,7 @@ body{background:var(--gray)}
 <footer id="contact"></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="assets/app.js?v=6"></script>
+<script src="assets/app.js?v=7"></script>
 <script>
 const qs = new URLSearchParams(location.search);
 const S = {
@@ -186,7 +186,7 @@ const pin = cls => L.divIcon({ className: "", html: `<div class="pin ${cls}"></d
 function ensureMap() {
   $("#mini").hidden = false;
   if (map) { setTimeout(() => map.invalidateSize(), 30); return; }
-  map = L.map("map", { zoomControl: true, attributionControl: true }).setView(EVAGO.center, 12);
+  map = L.map("map", { zoomControl: true, attributionControl: true }).setView(EVAGO.center, 11);
   L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", { maxZoom: 19, subdomains: "abcd", attribution: "&copy; OpenStreetMap &copy; CARTO" }).addTo(map);
   map.on("click", e => { if (!isBig()) { openBig(); return; } placePoint(isTow() ? S.mode : "from", e.latlng.lat, e.latlng.lng); });
 }
@@ -201,7 +201,7 @@ function setMode(m) { if (!isTow()) m = "from"; S.mode = m; $$("#seg button").fo
 function setMarker(which) {
   if (!map) return;
   const p = S[which];
-  if (!p || (which === "to" && !isTow())) { if (markers[which]) { map.removeLayer(markers[which]); markers[which] = null; } return; }
+  if (!p || p.lat == null || (which === "to" && !isTow())) { if (markers[which]) { map.removeLayer(markers[which]); markers[which] = null; } return; }
   if (!markers[which]) {
     markers[which] = L.marker([p.lat, p.lng], { icon: pin(which === "from" ? "pin-a" : "pin-b"), draggable: true }).addTo(map);
     markers[which].on("dragend", e => { const ll = e.target.getLatLng(); placePoint(which, ll.lat, ll.lng); });
@@ -210,7 +210,7 @@ function setMarker(which) {
 function fit() {
   if (!map) return;
   if (routeLine) map.fitBounds(routeLine.getBounds(), { padding: [30, 30], maxZoom: 16 });
-  else if (S.from) map.setView([S.from.lat, S.from.lng], 15);
+  else if (S.from && S.from.lat != null) map.setView([S.from.lat, S.from.lng], 15);
 }
 
 /* ---------- Поиск адреса: только Казахстан, сначала Алматы ---------- */
@@ -239,7 +239,14 @@ async function reverse(lat, lng) {
     const street = [a.road || a.pedestrian || a.neighbourhood || a.suburb, a.house_number].filter(Boolean).join(", ");
     const city = a.city || a.town || a.village || a.county || "";
     return [street, city].filter(Boolean).join(", ") || j.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-  } catch (e) { return `${lat.toFixed(5)}, ${lng.toFixed(5)}`; }
+  } catch (e) {
+    try {
+      const j = await (await fetch(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}`)).json();
+      const f = j.features && j.features[0];
+      if (f) { const x = fmtPhoton(f.properties); return [x.main, x.sub.split(", ").pop()].filter(Boolean).join(", "); }
+    } catch (e2) {}
+    return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  }
 }
 
 async function placePoint(which, lat, lng, label) {
@@ -279,10 +286,21 @@ function bindSearch(which) {
       } catch (e) { list.hidden = true; }
     }, 400);
   });
-  input.addEventListener("blur", () => setTimeout(() => list.hidden = true, 150));
+  input.addEventListener("blur", () => setTimeout(() => { list.hidden = true; acceptTyped(which); }, 200));
   input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); const b = $("button", list); if (b && !list.hidden) b.dispatchEvent(new MouseEvent("mousedown")); } });
 }
 bindSearch("from"); bindSearch("to");
+// клиент написал адрес и не выбрал подсказку — берём его текст, а точку на карте ставим по первому найденному
+async function acceptTyped(which) {
+  const v = $("#" + which).value.trim();
+  if (v.length < 3 || (S[which] && S[which].label === v)) return;
+  S[which] = { lat: null, lng: null, label: v };
+  hideErr(1); route();
+  try {
+    const r = (await search(v))[0];
+    if (r && S[which] && S[which].label === v) { S[which].lat = r.lat; S[which].lng = r.lng; setMarker(which); route(); }
+  } catch (e) {}
+}
 
 /* ---------- Геолокация ---------- */
 function locate() {
@@ -311,7 +329,7 @@ async function route() {
   // эвакуатор: от «Қайдан» до «Қайда»; остальные услуги: от базы до клиента
   const A = isTow() ? S.from : (S.from ? { lat: EVAGO.base[0], lng: EVAGO.base[1] } : null);
   const B = isTow() ? S.to : S.from;
-  if (A && B) {
+  if (A && B && A.lat != null && B.lat != null) {
     const seq = ++seqN;
     $("#v-dist").textContent = "…";
     try {
@@ -394,7 +412,8 @@ async function uploadPhotos() {
 /* ---------- Шаги ---------- */
 function showErr(n, m) { const e = $("#err" + n); e.textContent = m; e.hidden = false; }
 function hideErr(n) { $("#err" + n).hidden = true; }
-$("#next").onclick = () => {
+$("#next").onclick = async () => {
+  await acceptTyped("from"); if (isTow()) await acceptTyped("to");
   if (!S.from) { showErr(1, t("o_need_from")); $("#from").focus(); return; }
   if (isTow() && !S.to) { showErr(1, t("o_need_to")); $("#to").focus(); return; }
   hideErr(1); renderRecap();
@@ -439,7 +458,7 @@ $("#step2").addEventListener("submit", async e => {
     try { id = await rpc("create_order", photos.length ? { ...params, p_photos: photos } : params); }
     catch (x) { if (photos.length && !/too_many/.test(x.message)) id = await rpc("create_order", params); else throw x; }
     lastOrder(id);
-    location.href = "track.html?id=" + encodeURIComponent(id);
+    location.href = "track.html?new=1&id=" + encodeURIComponent(id);
   } catch (err) {
     showErr(2, String(err.message).includes("too_many") ? t("o_too_many") : t("o_send_err"));
     btn.disabled = false; renderChips();
@@ -449,6 +468,7 @@ $("#step2").addEventListener("submit", async e => {
 /* ---------- Старт ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
   $("#sos-note").hidden = !qs.get("sos");
+  ensureMap();
   renderChips(); renderPhotos(); applyService(); renderSum();
   const fromQ = qs.get("from"), toQ = qs.get("to");
   if (fromQ) { $("#from").value = fromQ; try { const r = (await search(fromQ))[0]; if (r) await placePoint("from", r.lat, r.lng, fromQ); } catch (e) {} }
