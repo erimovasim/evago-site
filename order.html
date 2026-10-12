@@ -187,10 +187,18 @@ function fmtPhoton(p) {
   const uniq = [...new Set(sub)].filter(x => x !== main);
   return { main, sub: uniq.join(", ") };
 }
-async function search(q) {
-  const u = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${EVAGO.center[0]}&lon=${EVAGO.center[1]}&limit=6&bbox=46.4,40.5,87.4,55.5`;
-  const r = await fetch(u); const j = await r.json();
+async function photon(q, bbox, limit) {
+  const u = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${EVAGO.center[0]}&lon=${EVAGO.center[1]}&limit=${limit}&bbox=${bbox}`;
+  const j = await (await fetch(u)).json();
   return (j.features || []).map(f => ({ lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0], ...fmtPhoton(f.properties) }));
+}
+async function search(q) {
+  // сначала Алматы и область, если мало — весь Казахстан
+  const local = await photon(q, "76.45,43.05,77.35,43.55", 6);
+  if (local.length >= 3) return local;
+  const kz = await photon(q, "46.4,40.5,87.4,55.5", 6);
+  const seen = new Set(local.map(r => r.lat.toFixed(4) + r.lng.toFixed(4)));
+  return local.concat(kz.filter(r => !seen.has(r.lat.toFixed(4) + r.lng.toFixed(4)))).slice(0, 6);
 }
 async function reverse(lat, lng) {
   try {

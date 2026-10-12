@@ -109,7 +109,7 @@ function render() {
   const price = O.final_price || O.price_est;
   const dPhone = O.driver_phone ? O.driver_phone.replace(/\s/g, "") : "";
   c.innerHTML = `
-    <span class="no">${t("t_no")} ${esc(O.id.slice(0, 8).toUpperCase())} · ${new Date(O.created_at).toLocaleString(LANG === "kz" ? "kk-KZ" : "ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+    <span class="no">${t("t_no")} ${esc(O.id.slice(0, 8).toUpperCase())} · ${fmtDate(O.created_at)}</span>
     <div class="status"><span class="st-ic">${ST_ICON[s] || ""}</span><div><h1>${t("st_" + s)}</h1><p>${t("st_" + s + "_d")}</p></div></div>
     ${active ? `<div class="steps">${ORDER_STEPS.map((x, i) => `<i class="${i <= idx ? "on" : ""}"></i>`).join("")}</div>` : ""}
     ${O.driver_name ? `<div class="driver"><span class="ava">${esc(O.driver_name[0])}</span><div><b>${esc(O.driver_name)}</b><span>${esc(O.driver_car || "")}</span></div>

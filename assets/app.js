@@ -96,7 +96,7 @@ const I18N = {
     // track page
     t_title: "Тапсырыс", t_no: "Тапсырыс №", t_notfound: "Тапсырыс табылмады", t_new_order: "Жаңа тапсырыс",
     st_new: "Жүргізуші ізделуде", st_accepted: "Жүргізуші табылды", st_onway: "Жүргізуші жолда", st_arrived: "Жүргізуші келді", st_done: "Тапсырыс аяқталды", st_cancelled: "Тапсырыс тоқтатылды",
-    st_new_d: "Диспетчер тапсырысыңызды көрді. Жақын жүргізушіні тауып, сізге қоңырау шалады.",
+    st_new_d: "Тапсырыс қабылданды. Диспетчер жақын жүргізушіні тауып, сізге қоңырау шалады.",
     st_accepted_d: "Жүргізуші тапсырысты қабылдады.", st_onway_d: "Жүргізуші сізге қарай келе жатыр.", st_arrived_d: "Жүргізуші орнында.",
     st_done_d: "EVAGO-ны таңдағаныңызға рахмет!", st_cancelled_d: "Қажет болса, жаңа тапсырыс беріңіз.",
     t_driver: "Жүргізуші", t_eta: "Келу уақыты", t_call: "Қоңырау шалу", t_cancel: "Тапсырысты тоқтату", t_cancel_q: "Тапсырысты шынымен тоқтатасыз ба?", t_yes: "Иә, тоқтату", t_no_btn: "Жоқ",
@@ -162,7 +162,7 @@ const I18N = {
     o_route_fail: "Маршрут не построился — расстояние указано примерно",
     t_title: "Заказ", t_no: "Заказ №", t_notfound: "Заказ не найден", t_new_order: "Новый заказ",
     st_new: "Ищем водителя", st_accepted: "Водитель найден", st_onway: "Водитель в пути", st_arrived: "Водитель на месте", st_done: "Заказ выполнен", st_cancelled: "Заказ отменён",
-    st_new_d: "Диспетчер получил заказ. Он найдёт ближайшего водителя и позвонит вам.",
+    st_new_d: "Заказ принят. Диспетчер найдёт ближайшего водителя и позвонит вам.",
     st_accepted_d: "Водитель принял заказ.", st_onway_d: "Водитель едет к вам.", st_arrived_d: "Водитель на месте.",
     st_done_d: "Спасибо, что выбрали EVAGO!", st_cancelled_d: "Если нужно, оформите новый заказ.",
     t_driver: "Водитель", t_eta: "Приедет через", t_call: "Позвонить", t_cancel: "Отменить заказ", t_cancel_q: "Точно отменить заказ?", t_yes: "Да, отменить", t_no_btn: "Нет",
@@ -192,6 +192,15 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const carById = id => EVAGO.cars.find(c => c.id === id) || EVAGO.cars[0];
 const svcById = id => EVAGO.services.find(s => s.id === id) || EVAGO.services[0];
 const icon = (id, sw = 1.8) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[id]}</svg>`;
+
+const MONTHS = {
+  kz: ["қаң", "ақп", "нау", "сәу", "мам", "мау", "шіл", "там", "қыр", "қаз", "қар", "жел"],
+  ru: ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]
+};
+function fmtDate(v) {
+  const d = new Date(v), p = n => String(n).padStart(2, "0");
+  return `${d.getDate()} ${MONTHS[LANG][d.getMonth()]}, ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
 
 function priceFor(serviceId, carId, km) {
   const s = svcById(serviceId);
