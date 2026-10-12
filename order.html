@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="assets/style.css?v=7">
+<link rel="stylesheet" href="assets/style.css?v=8">
 <style>
 /* Заказ: фото-шапка как на главной, карточка формы поверх, маленькая карта раскрывается по нажатию */
 body{background:var(--gray)}
@@ -167,7 +167,7 @@ body{background:var(--gray)}
 <footer id="contact"></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="assets/app.js?v=7"></script>
+<script src="assets/app.js?v=8"></script>
 <script>
 const qs = new URLSearchParams(location.search);
 const S = {
@@ -187,7 +187,7 @@ function ensureMap() {
   $("#mini").hidden = false;
   if (map) { setTimeout(() => map.invalidateSize(), 30); return; }
   map = L.map("map", { zoomControl: true, attributionControl: true }).setView(EVAGO.center, 11);
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", { maxZoom: 19, subdomains: "abcd", attribution: "&copy; OpenStreetMap &copy; CARTO" }).addTo(map);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
   map.on("click", e => { if (!isBig()) { openBig(); return; } placePoint(isTow() ? S.mode : "from", e.latlng.lat, e.latlng.lng); });
 }
 const isBig = () => $("#mini").classList.contains("big");
