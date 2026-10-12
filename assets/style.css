@@ -111,3 +111,4 @@ footer{background:var(--ink);color:#B8B8B0;padding-block:56px 100px;font-size:15
 .me-dot{width:16px;height:16px;border-radius:50%;background:var(--blue);border:3px solid var(--white);box-shadow:0 0 0 6px rgba(0,122,255,.2)}
 .truck-dot{width:34px;height:34px;border-radius:50%;background:var(--accent);border:3px solid var(--ink);box-shadow:0 0 0 8px rgba(255,210,0,.3);display:grid;place-items:center}
 .truck-dot::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--ink)}
+@media (max-width:560px){.fab{min-width:46px;height:46px;padding:0 12px;font-size:13px}.fabs{right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px))}}

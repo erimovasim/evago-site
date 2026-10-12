@@ -60,6 +60,8 @@ body{background:var(--gray)}
 .link{display:flex;gap:8px;align-items:center;background:var(--gray);border-radius:12px;padding:10px 12px;font-size:13px}
 .link input{flex:1;min-width:0;border:0;background:none;font-size:13px;outline:0}
 .back-m{display:none}
+.pgal{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pgal img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;max-width:100%}
 .apps td,.apps th{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
 .apps{width:100%;border-collapse:collapse;background:#fff}
 .tbl{overflow-x:auto;border-radius:14px;border:1px solid var(--line)}
@@ -137,13 +139,22 @@ $("#sbtn").onclick = async () => {
 };
 $("#logout").onclick = () => sb.auth.signOut();
 
-sb.auth.onAuthStateChange((_ev, session) => boot(session));
+// ВАЖНО: внутри onAuthStateChange нельзя ждать другие запросы Supabase — страница зависает.
+// Поэтому запускаем boot отдельно и не дважды для одной и той же сессии.
+let bootedFor = undefined;
+sb.auth.onAuthStateChange((ev, session) => {
+  const key = session ? session.user.id : null;
+  if (ev === "TOKEN_REFRESHED" || key === bootedFor) return;
+  bootedFor = key;
+  setTimeout(() => boot(session), 0);
+});
 
 async function boot(session) {
   $("#login").hidden = !!session; $("#app").hidden = true; $("#noaccess").hidden = true;
   $("#logout").hidden = !session; $("#who").textContent = session ? session.user.email : ""; $("#live").hidden = !session;
   if (!session) { if (channel) { sb.removeChannel(channel); channel = null; } return; }
-  const { data: isAdmin } = await sb.rpc("is_admin");
+  const { data: isAdmin, error: aErr } = await sb.rpc("is_admin");
+  if (aErr) { $("#noaccess").hidden = false; $("#noaccess p").textContent = "Ошибка: " + aErr.message; return; }
   if (!isAdmin) { $("#noaccess").hidden = false; return; }
   $("#app").hidden = false;
   openId = (location.hash.match(/^#o-([0-9a-f-]{36})$/) || [])[1] || null;
@@ -207,7 +218,7 @@ function renderList() {
       <span class="h"><span>№ ${o.id.slice(0, 8).toUpperCase()} · ${ago(o.created_at)}</span><span class="pill p-${o.status}">${ST[o.status]}</span></span>
       <b>${esc(s.ru[0])} · ${esc(carById(o.car_type).ru)}${o.price_est ? " · ≈ " + money(o.final_price || o.price_est) : ""}</b>
       <span class="ad">● ${esc(o.from_address)}</span>${o.to_address ? `<span class="ad muted">→ ${esc(o.to_address)}</span>` : ""}
-      <span class="h"><span>${esc(o.client_name || "Без имени")} · ${esc(o.phone)}</span><span>${o.driver_name ? "🚚 " + esc(o.driver_name) : ""}</span></span>
+      <span class="h"><span>${esc(o.client_name || "Без имени")} · ${esc(o.phone)}</span><span>${o.photos && o.photos.length ? "📷 " + o.photos.length + " " : ""}${o.driver_name ? "🚚 " + esc(o.driver_name) : ""}</span></span>
     </button>`;
   }).join("") : `<div class="empty">${filter === "active" ? "Активных заказов нет. Новые появятся здесь сами, со звуком." : "Пусто"}</div>`;
   $$(".oc").forEach(b => b.onclick = () => openOrder(b.dataset.id));
@@ -247,6 +258,7 @@ function renderDetail(force) {
         <div><small>Цена (оценка)</small><b class="num">${o.price_est ? money(o.price_est) : "—"}</b></div>
       </div>
       ${o.comment ? `<div class="kv" style="grid-template-columns:1fr"><div><small>Комментарий</small>${esc(o.comment)}</div></div>` : ""}
+      ${o.photos && o.photos.length ? `<div class="pgal">${o.photos.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="Фото клиента" loading="lazy"></a>`).join("")}</div>` : ""}
       <div class="acts">
         <a class="btn btn-dark btn-sm" href="tel:${esc(o.phone)}">📞 ${esc(o.phone)}</a>
         <a class="btn btn-o btn-sm" href="${wa(o.phone, "Здравствуйте! Это EVAGO, по вашему заказу №" + o.id.slice(0, 8).toUpperCase() + ".")}" target="_blank" rel="noopener">WhatsApp клиенту</a>

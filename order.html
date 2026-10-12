@@ -4,145 +4,167 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Эвакуатор шақыру — EVAGO</title>
-<meta name="description" content="Эвакуатор шақыру: картадан орныңызды белгілеңіз, бағаны алдын ала көріңіз.">
+<meta name="description" content="Эвакуатор шақыру: орныңызды көрсетіңіз, бағаны алдын ала көріңіз.">
 <meta name="theme-color" content="#FFD200">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="assets/style.css">
 <style>
-.order-app{display:grid;grid-template-columns:440px 1fr;height:calc(100dvh - 69px)}
-.panel{overflow-y:auto;border-right:1px solid var(--line);background:var(--white);order:-1}
-.panel-in{padding:22px 22px 28px;display:grid;gap:20px}
-#map{position:relative;isolation:isolate;min-height:300px}
-.map-btn{position:absolute;right:14px;bottom:24px;z-index:500;width:48px;height:48px;border-radius:50%;background:var(--white);border:0;box-shadow:0 6px 18px rgba(0,0,0,.2);display:grid;place-items:center;cursor:pointer}
-.map-btn svg{width:22px;height:22px;color:var(--blue)}
-.map-hint{position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:500;background:var(--ink);color:var(--white);font-size:14px;padding:9px 14px;border-radius:999px;max-width:calc(100% - 28px);text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.2)}
-.ttl{font-size:24px;font-weight:800}
+/* Заказ: фото-шапка как на главной, карточка формы поверх, маленькая карта раскрывается по нажатию */
+body{background:var(--gray)}
+.o-hero{position:relative;height:240px;background:url(assets/hero.jpg) center 40%/cover no-repeat}
+.o-hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(17,17,17,.15) 0%,rgba(17,17,17,.55) 100%)}
+.o-hero .wrap{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:72px;color:#fff}
+.o-hero h1{font-size:clamp(28px,4vw,40px);font-weight:800}
+.o-hero p{opacity:.9;margin-top:6px}
+.o-wrap{max-width:720px;margin:-52px auto 0;padding:0 16px 80px;position:relative;z-index:2}
+.card{background:#fff;border-radius:22px;box-shadow:var(--shadow);padding:22px;display:grid;gap:20px}
 .lbl{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
-.sos-note{background:#FFF0EF;border:1px solid #FFD0CC;color:#B42318;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:600}
-.route{border:1px solid var(--line);border-radius:14px;position:relative}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid var(--line);background:#fff;border-radius:14px;padding:12px 6px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;line-height:1.25}
+.tabs button svg{width:24px;height:24px;flex:none}
+.tabs button[aria-pressed="true"]{border-color:var(--ink);background:var(--accent-soft)}
+.route{border:1px solid var(--line);border-radius:16px}
 .pt{position:relative;display:flex;align-items:center;gap:12px;padding:4px 8px 4px 14px}
 .pt+.pt{border-top:1px solid var(--line)}
-.pt.active{background:linear-gradient(90deg,var(--accent-soft),transparent 70%)}
-.pt:first-child{border-radius:14px 14px 0 0}.pt:last-child{border-radius:0 0 14px 14px}
 .dot{width:12px;height:12px;border-radius:50%;flex:none}
 .dot-a{background:var(--ink)}.dot-b{background:var(--accent);border:2px solid var(--accent-2)}
 .pt-in{flex:1;min-width:0}
 .pt-in small{display:block;font-size:12px;color:var(--muted);padding-top:8px}
 .pt-in input{width:100%;border:0;outline:0;background:none;font-size:16px;padding:2px 0 10px;text-overflow:ellipsis}
-.ic-btn{flex:none;width:38px;height:38px;border-radius:10px;border:0;background:none;cursor:pointer;display:grid;place-items:center;color:var(--muted)}
-.ic-btn:hover{background:var(--gray);color:var(--ink)}
-.ic-btn svg{width:20px;height:20px}
-.sugg{position:absolute;left:0;right:0;top:100%;z-index:50;margin:4px 0 0;padding:6px;list-style:none;background:var(--white);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);max-height:280px;overflow:auto}
-.sugg li button{width:100%;text-align:left;border:0;background:none;padding:10px 10px;border-radius:8px;cursor:pointer;display:block}
+.here{flex:none;display:inline-flex;align-items:center;gap:6px;border:0;background:var(--ink);color:#fff;border-radius:999px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.here svg{width:16px;height:16px}
+.sugg{position:absolute;left:0;right:0;top:100%;z-index:50;margin:4px 0 0;padding:6px;list-style:none;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);max-height:280px;overflow:auto}
+.sugg li button{width:100%;text-align:left;border:0;background:none;padding:10px;border-radius:8px;cursor:pointer;display:block}
 .sugg li button:hover,.sugg li button:focus{background:var(--gray)}
 .sugg b{display:block;font-weight:600;font-size:15px}
 .sugg span{font-size:13px;color:var(--muted)}
+.sugg .none{padding:10px;font-size:14px;color:var(--muted)}
 .hint{font-size:14px;color:var(--muted);margin-top:8px;display:flex;gap:8px;align-items:center}
 .spin{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--ink);border-radius:50%;animation:sp .8s linear infinite;flex:none}
 @keyframes sp{to{transform:rotate(360deg)}}
+/* мини-карта */
+.mini{position:relative;margin-top:10px;height:150px;border-radius:14px;overflow:hidden;border:1px solid var(--line);cursor:pointer}
+.mini #map{position:absolute;inset:0}
+.mini .open{position:absolute;right:10px;bottom:10px;z-index:500;background:#fff;border:0;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.18);cursor:pointer}
+.mini.small .leaflet-control-container{display:none}
+/* большая карта поверх всего */
+.mini.big{position:fixed;inset:0;z-index:3000;height:auto;margin:0;border-radius:0;border:0;cursor:default}
+.mini.big .open{display:none}
+.bigbar{display:none}
+.mini.big .bigbar{display:flex;position:absolute;left:0;right:0;bottom:0;z-index:600;gap:8px;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(0deg,#fff 70%,rgba(255,255,255,0));flex-wrap:wrap;align-items:center}
+.bigtop{display:none}
+.mini.big .bigtop{display:block;position:absolute;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:600;background:var(--ink);color:#fff;font-size:14px;padding:9px 14px;border-radius:999px;max-width:calc(100% - 28px);text-align:center}
+.seg{display:flex;border:1px solid var(--line);border-radius:12px;padding:3px;background:#fff}
+.seg button{border:0;background:none;padding:9px 14px;border-radius:9px;font-weight:600;cursor:pointer;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.bigbar .btn-y{margin-left:auto}
+.chips .chip{padding:9px 14px}
 .sum{background:var(--gray);border-radius:14px;padding:16px;display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:10px}
 .sum div small{display:block;font-size:12px;color:var(--muted)}
 .sum div b{font-size:17px;font-weight:700}
 .sum div.big b{font-size:22px;font-weight:800}
 .sum .note{grid-column:1/-1;font-size:12px;color:var(--muted)}
-.svc-chips .chip{padding:9px 12px}
-.back{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:0;font-weight:600;cursor:pointer;color:var(--muted)}
+.back{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:0;font-weight:600;cursor:pointer;color:var(--muted);justify-self:start}
 .back svg{width:18px;height:18px}
 .recap{border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;gap:6px;font-size:15px}
 .recap .r{display:flex;gap:10px}
-.recap .r .dot{margin-top:7px}
+.recap .r .dot{margin-top:6px}
 .recap .p{display:flex;justify-content:space-between;border-top:1px dashed var(--line);padding-top:10px;margin-top:4px;font-weight:700}
+.photos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ph{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--gray);max-width:100%}
+.ph img{width:100%;height:100%;object-fit:cover}
+.ph button{position:absolute;top:6px;right:6px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(17,17,17,.75);color:#fff;font-size:16px;line-height:1;cursor:pointer}
+.add-ph{aspect-ratio:1;max-width:100%;border:1.5px dashed #CFCFC8;border-radius:14px;display:grid;place-items:center;align-content:center;gap:6px;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer;text-align:center;padding:6px}
+.add-ph svg{width:26px;height:26px}
 .agree{font-size:12px;color:var(--muted);text-align:center}
-@media (max-width:860px){
-  .order-app{display:block;height:auto}
-  #map{height:44vh;min-height:280px}
-  .panel{border-right:0;border-top:1px solid var(--line);border-radius:20px 20px 0 0;margin-top:-18px;position:relative;z-index:600;box-shadow:0 -10px 24px -14px rgba(0,0,0,.25)}
-  .panel-in{padding:20px 16px calc(28px + env(safe-area-inset-bottom,0px))}
-  .ttl{font-size:21px}
-  body.step2 #map{display:none}
-  body.step2 .panel{margin-top:0;border-radius:0;border-top:0;box-shadow:none}
+.sos-note{background:#FFF0EF;border:1px solid #FFD0CC;color:#B42318;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:600}
+@media (max-width:560px){
+  .o-hero{height:200px}
+  .o-hero .wrap{padding-bottom:64px}
+  .card{padding:18px 16px;border-radius:20px}
+  .tabs{grid-template-columns:repeat(2,1fr)}
+  .tabs button{flex-direction:row;justify-content:flex-start;padding:12px;text-align:left}
+  .sum{grid-template-columns:1fr 1fr}.sum div.big{grid-column:1/-1}
+  .here{padding:8px 10px;font-size:12px}
+  .o-hero{height:220px}
 }
 </style>
 </head>
 <body data-page="order">
 <header id="site-header"></header>
 
-<main class="order-app">
-  <div id="map">
-    <div class="map-hint" id="map-hint" hidden></div>
-    <button class="map-btn" id="locate" type="button" aria-label="Менің орным"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
-  </div>
+<div class="o-hero"><div class="wrap"><h1 data-i="o_title">Тапсырыс беру</h1><p data-i="badge"></p></div></div>
 
-  <aside class="panel" aria-live="polite">
-    <!-- STEP 1 -->
-    <div class="panel-in" id="step1">
-      <h1 class="ttl" data-i="o_title">Тапсырыс беру</h1>
-      <p class="sos-note" id="sos-note" data-i="o_sos_note" hidden></p>
+<main class="o-wrap">
+  <!-- ШАГ 1 -->
+  <div class="card" id="step1">
+    <p class="sos-note" id="sos-note" data-i="o_sos_note" hidden></p>
+    <div><div class="lbl" data-i="o_service">Не болды?</div><div class="tabs" id="svc"></div></div>
 
-      <div>
-        <div class="lbl" data-i="o_service">Не болды?</div>
-        <div class="chips svc-chips" id="svc-chips"></div>
-      </div>
-
-      <div>
-        <div class="lbl" data-i="o_where">Сіз қайдасыз?</div>
-        <div class="route">
-          <div class="pt" id="pt-from">
-            <span class="dot dot-a"></span>
-            <label class="pt-in"><small data-i="from">Қайдан?</small><input id="from" autocomplete="off" data-ph="addr_ph"></label>
-            <button class="ic-btn" type="button" id="loc-btn" aria-label="Менің орным"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
-            <ul class="sugg" id="sugg-from" hidden></ul>
-          </div>
-          <div class="pt" id="pt-to">
-            <span class="dot dot-b"></span>
-            <label class="pt-in"><small data-i="to">Қайда?</small><input id="to" autocomplete="off" data-ph="addr_ph"></label>
-            <button class="ic-btn" type="button" id="swap" aria-label="⇅"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4v16M4 8l4-4 4 4M16 20V4M12 16l4 4 4-4"/></svg></button>
-            <ul class="sugg" id="sugg-to" hidden></ul>
-          </div>
+    <div>
+      <div class="lbl" data-i="o_where">Сіз қайдасыз?</div>
+      <div class="route">
+        <div class="pt" id="pt-from">
+          <span class="dot dot-a"></span>
+          <label class="pt-in"><small data-i="from">Қайдан?</small><input id="from" autocomplete="off" data-ph="addr_ph"></label>
+          <button class="here" type="button" id="here"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span data-i="o_here">Мен осындамын</span></button>
+          <ul class="sugg" id="sugg-from" hidden></ul>
         </div>
-        <p class="hint" id="hint"></p>
+        <div class="pt" id="pt-to">
+          <span class="dot dot-b"></span>
+          <label class="pt-in"><small data-i="to">Қайда?</small><input id="to" autocomplete="off" data-ph="addr_ph"></label>
+          <ul class="sugg" id="sugg-to" hidden></ul>
+        </div>
       </div>
-
-      <div>
-        <div class="lbl" data-i="car">Көлік түрі</div>
-        <div class="chips" id="car-chips"></div>
+      <p class="hint" id="hint" hidden></p>
+      <div class="mini small" id="mini" hidden>
+        <div id="map"></div>
+        <button class="open" type="button" id="open-map" data-i="o_map_open">Картадан дәлдеу</button>
+        <div class="bigtop" data-i="o_map_tap"></div>
+        <div class="bigbar">
+          <div class="seg" id="seg"><button type="button" data-m="from" aria-pressed="true" data-i="o_set_from"></button><button type="button" data-m="to" aria-pressed="false" data-i="o_set_to"></button></div>
+          <button class="btn btn-o btn-sm" type="button" id="locate2"><span data-i="o_here"></span></button>
+          <button class="btn btn-y" type="button" id="close-map" data-i="o_map_done">Дайын</button>
+        </div>
       </div>
-
-      <div class="sum" id="sum">
-        <div id="sum-dist"><small data-i="o_distance">Қашықтық</small><b class="num" id="v-dist">—</b></div>
-        <div id="sum-time"><small data-i="o_time">Жолда</small><b class="num" id="v-time">—</b></div>
-        <div class="big"><small data-i="o_price">Болжамды баға</small><b class="num" id="v-price">—</b></div>
-        <p class="note" id="sum-note" data-i="tnote"></p>
-      </div>
-
-      <p class="err" id="err1" hidden></p>
-      <button class="btn btn-y btn-block" type="button" id="next"><span data-i="o_next">Жалғастыру</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     </div>
 
-    <!-- STEP 2 -->
-    <form class="panel-in" id="step2" hidden novalidate>
-      <button class="back" type="button" id="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><span data-i="o_back">Артқа</span></button>
-      <h1 class="ttl" data-i="o_details">Қосымша ақпарат</h1>
-      <div class="recap" id="recap"></div>
+    <div id="car-box"><div class="lbl" data-i="car">Көлік түрі</div><div class="chips" id="cars"></div></div>
 
-      <div>
-        <div class="lbl" data-i="o_problem">Не болды?</div>
-        <div class="chips" id="prob-chips"></div>
-      </div>
+    <div class="sum">
+      <div><small id="dist-l">Қашықтық</small><b class="num" id="v-dist">—</b></div>
+      <div><small data-i="o_time">Жолда</small><b class="num" id="v-time">—</b></div>
+      <div class="big"><small data-i="o_price">Болжамды баға</small><b class="num" id="v-price">—</b></div>
+      <p class="note" id="sum-note"></p>
+    </div>
+    <p class="err" id="err1" hidden></p>
+    <button class="btn btn-y btn-block" type="button" id="next"><span data-i="o_next">Жалғастыру</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </div>
 
-      <label class="field"><span data-i="o_comment">Түсініктеме</span><textarea class="input" id="comment" maxlength="500" data-ph="o_comment_ph"></textarea></label>
-      <label class="field"><span data-i="o_name">Атыңыз</span><input class="input" id="name" maxlength="80" autocomplete="given-name" data-ph="o_name_ph"></label>
-      <label class="field"><span data-i="o_phone">Телефон</span>
-        <span class="phone-in"><b>+7</b><input id="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="700 000 00 00" class="num"></span>
-      </label>
-      <p class="err" id="err2" hidden></p>
-      <button class="btn btn-y btn-block" type="submit" id="send"><span data-i="o_send">Эвакуатор шақыру</span></button>
-      <p class="agree" data-i="o_agree"></p>
-    </form>
-  </aside>
+  <!-- ШАГ 2 -->
+  <form class="card" id="step2" hidden novalidate>
+    <button class="back" type="button" id="back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg><span data-i="o_back">Артқа</span></button>
+    <h2 style="font-size:24px;font-weight:800" data-i="o_details">Қосымша ақпарат</h2>
+    <div class="recap" id="recap"></div>
+    <div><div class="lbl" data-i="o_problem"></div><div class="chips" id="probs"></div></div>
+    <div>
+      <div class="lbl" data-i="o_photos"></div>
+      <div class="photos" id="photos"></div>
+      <p class="hint" data-i="o_photos_hint"></p>
+      <input type="file" id="file" accept="image/*" multiple hidden>
+    </div>
+    <label class="field"><span data-i="o_comment">Түсініктеме</span><textarea class="input" id="comment" maxlength="500" data-ph="o_comment_ph"></textarea></label>
+    <label class="field"><span data-i="o_name">Атыңыз</span><input class="input" id="name" maxlength="80" autocomplete="given-name" data-ph="o_name_ph"></label>
+    <label class="field"><span data-i="o_phone">Телефон</span><span class="phone-in"><b>+7</b><input id="phone" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="700 000 00 00" class="num"></span></label>
+    <p class="err" id="err2" hidden></p>
+    <button class="btn btn-y btn-block" type="submit" id="send"><span>Эвакуатор шақыру</span></button>
+    <p class="agree" data-i="o_agree"></p>
+  </form>
 </main>
+
+<footer id="contact"></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="assets/app.js"></script>
@@ -151,59 +173,69 @@ const qs = new URLSearchParams(location.search);
 const S = {
   service: EVAGO.services.some(s => s.id === qs.get("s")) ? qs.get("s") : "tow",
   car: EVAGO.cars.some(c => c.id === qs.get("car")) ? qs.get("car") : "sedan",
-  from: null, to: null,       // {lat,lng,label}
-  mode: "from",
+  from: null, to: null, mode: "from",
   km: null, min: null, approx: false,
-  problems: new Set(qs.get("sos") ? ["pr2"] : [])
+  problems: new Set(qs.get("sos") ? ["pr2"] : []),
+  photos: []
 };
 const isTow = () => S.service === "tow";
 
-/* ---------- Map ---------- */
-const map = L.map("map", { zoomControl: false, attributionControl: true }).setView(EVAGO.center, 12);
-L.control.zoom({ position: "topright" }).addTo(map);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
-const mkIcon = cls => L.divIcon({ className: "", html: `<div class="pin ${cls}"></div>`, iconSize: [30, 30], iconAnchor: [15, 36] });
-const markers = { from: null, to: null };
-let meMarker = null, routeLine = null;
+/* ---------- Карта: маленькая, по нажатию во весь экран ---------- */
+let map = null, markers = { from: null, to: null }, routeLine = null;
+const pin = cls => L.divIcon({ className: "", html: `<div class="pin ${cls}"></div>`, iconSize: [30, 30], iconAnchor: [15, 36] });
+function ensureMap() {
+  $("#mini").hidden = false;
+  if (map) { setTimeout(() => map.invalidateSize(), 30); return; }
+  map = L.map("map", { zoomControl: true, attributionControl: true }).setView(EVAGO.center, 12);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", { maxZoom: 19, subdomains: "abcd", attribution: "&copy; OpenStreetMap &copy; CARTO" }).addTo(map);
+  map.on("click", e => { if (!isBig()) { openBig(); return; } placePoint(isTow() ? S.mode : "from", e.latlng.lat, e.latlng.lng); });
+}
+const isBig = () => $("#mini").classList.contains("big");
+function openBig() { ensureMap(); $("#mini").classList.add("big"); $("#mini").classList.remove("small"); document.body.style.overflow = "hidden"; setMode(S.from && isTow() && !S.to ? "to" : S.mode); setTimeout(() => { map.invalidateSize(); fit(); }, 60); }
+function closeBig() { $("#mini").classList.remove("big"); $("#mini").classList.add("small"); document.body.style.overflow = ""; setTimeout(() => { map.invalidateSize(); fit(); }, 60); }
+$("#open-map").onclick = e => { e.stopPropagation(); openBig(); };
+$("#close-map").onclick = closeBig;
+$$("#seg button").forEach(b => b.onclick = () => setMode(b.dataset.m));
+function setMode(m) { if (!isTow()) m = "from"; S.mode = m; $$("#seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.m === m)); }
 
 function setMarker(which) {
+  if (!map) return;
   const p = S[which];
-  if (!p) { if (markers[which]) { map.removeLayer(markers[which]); markers[which] = null; } return; }
+  if (!p || (which === "to" && !isTow())) { if (markers[which]) { map.removeLayer(markers[which]); markers[which] = null; } return; }
   if (!markers[which]) {
-    markers[which] = L.marker([p.lat, p.lng], { icon: mkIcon(which === "from" ? "pin-a" : "pin-b"), draggable: true }).addTo(map);
+    markers[which] = L.marker([p.lat, p.lng], { icon: pin(which === "from" ? "pin-a" : "pin-b"), draggable: true }).addTo(map);
     markers[which].on("dragend", e => { const ll = e.target.getLatLng(); placePoint(which, ll.lat, ll.lng); });
   } else markers[which].setLatLng([p.lat, p.lng]);
 }
+function fit() {
+  if (!map) return;
+  if (routeLine) map.fitBounds(routeLine.getBounds(), { padding: [30, 30], maxZoom: 16 });
+  else if (S.from) map.setView([S.from.lat, S.from.lng], 15);
+}
 
-map.on("click", e => {
-  const which = (!isTow()) ? "from" : S.mode;
-  placePoint(which, e.latlng.lat, e.latlng.lng);
-});
-
-/* ---------- Geocoding (Photon search + Nominatim reverse) ---------- */
+/* ---------- Поиск адреса: только Казахстан, сначала Алматы ---------- */
 function fmtPhoton(p) {
   const main = p.name || [p.street, p.housenumber].filter(Boolean).join(" ") || p.city || "";
   const sub = [p.name && p.street ? [p.street, p.housenumber].filter(Boolean).join(" ") : "", p.district, p.city || p.county, p.state].filter(Boolean);
-  const uniq = [...new Set(sub)].filter(x => x !== main);
-  return { main, sub: uniq.join(", ") };
+  return { main, sub: [...new Set(sub)].filter(x => x !== main).join(", ") };
 }
-async function photon(q, bbox, limit) {
-  const u = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${EVAGO.center[0]}&lon=${EVAGO.center[1]}&limit=${limit}&bbox=${bbox}`;
+async function photon(q, bbox) {
+  const u = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${EVAGO.center[0]}&lon=${EVAGO.center[1]}&limit=10&bbox=${bbox}`;
   const j = await (await fetch(u)).json();
-  return (j.features || []).map(f => ({ lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0], ...fmtPhoton(f.properties) }));
+  return (j.features || []).filter(f => (f.properties.countrycode || "").toUpperCase() === "KZ")
+    .map(f => ({ lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0], ...fmtPhoton(f.properties) }));
 }
 async function search(q) {
-  // сначала Алматы и область, если мало — весь Казахстан
-  const local = await photon(q, "76.45,43.05,77.35,43.55", 6);
-  if (local.length >= 3) return local;
-  const kz = await photon(q, "46.4,40.5,87.4,55.5", 6);
+  const local = await photon(q, "76.45,43.05,77.35,43.55");
+  if (local.length >= 3) return local.slice(0, 6);
+  const kz = await photon(q, "46.4,40.5,87.4,55.5");
   const seen = new Set(local.map(r => r.lat.toFixed(4) + r.lng.toFixed(4)));
   return local.concat(kz.filter(r => !seen.has(r.lat.toFixed(4) + r.lng.toFixed(4)))).slice(0, 6);
 }
 async function reverse(lat, lng) {
   try {
-    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&lat=${lat}&lon=${lng}&accept-language=${LANG === "kz" ? "kk,ru" : "ru"}`);
-    const j = await r.json(); const a = j.address || {};
+    const j = await (await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=18&lat=${lat}&lon=${lng}&accept-language=${LANG === "kz" ? "kk,ru" : "ru"}`)).json();
+    const a = j.address || {};
     const street = [a.road || a.pedestrian || a.neighbourhood || a.suburb, a.house_number].filter(Boolean).join(", ");
     const city = a.city || a.town || a.village || a.county || "";
     return [street, city].filter(Boolean).join(", ") || j.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -213,20 +245,19 @@ async function reverse(lat, lng) {
 async function placePoint(which, lat, lng, label) {
   S[which] = { lat, lng, label: label || "…" };
   $("#" + which).value = label || "…";
-  setMarker(which);
+  ensureMap(); setMarker(which);
   if (which === "from" && isTow() && !S.to) setMode("to");
-  hideErr(1); updateHint(); route();
+  hideErr(1); route();
   if (!label) {
     const l = await reverse(lat, lng);
     if (S[which] && S[which].lat === lat) { S[which].label = l; $("#" + which).value = l; }
   }
 }
 
-/* suggestions */
 function bindSearch(which) {
   const input = $("#" + which), list = $("#sugg-" + which);
   let timer, last = "";
-  input.addEventListener("focus", () => { if (isTow() || which === "from") setMode(which); input.select(); });
+  input.addEventListener("focus", () => { setMode(which); input.select(); });
   input.addEventListener("input", () => {
     clearTimeout(timer);
     const q = input.value.trim();
@@ -236,151 +267,149 @@ function bindSearch(which) {
       try {
         const res = await search(q);
         if (last !== q) return;
-        list.innerHTML = res.length ? res.map((r, i) => `<li><button type="button" data-k="${i}"><b>${esc(r.main)}</b><span>${esc(r.sub)}</span></button></li>`).join("") : `<li><span style="padding:10px;display:block">—</span></li>`;
+        list.innerHTML = res.length ? res.map((r, i) => `<li><button type="button" data-k="${i}"><b>${esc(r.main)}</b><span>${esc(r.sub)}</span></button></li>`).join("") : `<li class="none">${t("o_search_none")}</li>`;
         list.hidden = false;
         $$("button", list).forEach(b => b.onmousedown = ev => {
           ev.preventDefault();
           const r = res[b.dataset.k]; list.hidden = true;
-          const label = [r.main, r.sub.split(", ").slice(-2, -1)[0]].filter(Boolean).join(", ");
-          placePoint(which, r.lat, r.lng, label);
-          map.setView([r.lat, r.lng], 16);
+          const city = r.sub.split(", ").pop();
+          placePoint(which, r.lat, r.lng, [r.main, city].filter(Boolean).join(", "));
           input.blur();
         });
       } catch (e) { list.hidden = true; }
-    }, 450);
+    }, 400);
   });
   input.addEventListener("blur", () => setTimeout(() => list.hidden = true, 150));
   input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); const b = $("button", list); if (b && !list.hidden) b.dispatchEvent(new MouseEvent("mousedown")); } });
 }
 bindSearch("from"); bindSearch("to");
 
-function setMode(m) {
-  S.mode = m;
-  $("#pt-from").classList.toggle("active", m === "from");
-  $("#pt-to").classList.toggle("active", m === "to" && isTow());
-  updateHint();
-}
-function updateHint() {
-  const h = $("#map-hint");
-  const need = !S.from ? "o_tap_from" : (isTow() && !S.to ? "o_tap_to" : null);
-  if (need) { h.textContent = t(S.mode === "to" && isTow() ? "o_tap_to" : need); h.hidden = false; } else h.hidden = true;
-}
-
-/* ---------- Geolocation ---------- */
-function locate(auto) {
+/* ---------- Геолокация ---------- */
+function locate() {
   const hint = $("#hint");
+  hint.hidden = false;
   if (!navigator.geolocation) { hint.textContent = t("o_loc_denied"); return; }
   hint.innerHTML = `<span class="spin"></span><span>${t("o_locating")}</span>`;
   navigator.geolocation.getCurrentPosition(pos => {
-    hint.textContent = "";
-    const { latitude: lat, longitude: lng, accuracy } = pos.coords;
-    if (meMarker) map.removeLayer(meMarker);
-    meMarker = L.marker([lat, lng], { icon: L.divIcon({ className: "", html: '<div class="me-dot"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }), interactive: false }).addTo(map);
-    map.setView([lat, lng], 16);
-    if (!auto || !S.from) placePoint("from", lat, lng);
-  }, () => {
-    hint.textContent = t("o_loc_denied");
-    setMode("from");
-  }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 });
+    hint.hidden = true;
+    placePoint("from", pos.coords.latitude, pos.coords.longitude);
+  }, () => { hint.textContent = t("o_loc_denied"); ensureMap(); }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 30000 });
 }
-$("#locate").onclick = () => locate(false);
-$("#loc-btn").onclick = () => locate(false);
+$("#here").onclick = locate;
+$("#locate2").onclick = locate;
 
-$("#swap").onclick = () => {
-  if (!isTow()) return;
-  [S.from, S.to] = [S.to, S.from];
-  $("#from").value = S.from ? S.from.label : ""; $("#to").value = S.to ? S.to.label : "";
-  setMarker("from"); setMarker("to"); route();
-};
-
-/* ---------- Route & price ---------- */
+/* ---------- Маршрут и цена ---------- */
 function haversine(a, b) {
-  const R = 6371, toR = x => x * Math.PI / 180;
-  const dLat = toR(b.lat - a.lat), dLng = toR(b.lng - a.lng);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toR(a.lat)) * Math.cos(toR(b.lat)) * Math.sin(dLng / 2) ** 2;
+  const R = 6371, r = x => x * Math.PI / 180;
+  const h = Math.sin(r(b.lat - a.lat) / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(r(b.lng - a.lng) / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
-let routeSeq = 0;
+let seqN = 0;
 async function route() {
-  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+  if (routeLine && map) { map.removeLayer(routeLine); routeLine = null; }
   S.km = null; S.min = null; S.approx = false;
-  if (isTow() && S.from && S.to) {
-    const seq = ++routeSeq;
+  // эвакуатор: от «Қайдан» до «Қайда»; остальные услуги: от базы до клиента
+  const A = isTow() ? S.from : (S.from ? { lat: EVAGO.base[0], lng: EVAGO.base[1] } : null);
+  const B = isTow() ? S.to : S.from;
+  if (A && B) {
+    const seq = ++seqN;
     $("#v-dist").textContent = "…";
     try {
-      const u = `https://router.project-osrm.org/route/v1/driving/${S.from.lng},${S.from.lat};${S.to.lng},${S.to.lat}?overview=full&geometries=geojson`;
-      const j = await (await fetch(u)).json();
-      if (seq !== routeSeq) return;
-      const r = j.routes && j.routes[0];
-      if (!r) throw new Error("no route");
+      const j = await (await fetch(`https://router.project-osrm.org/route/v1/driving/${A.lng},${A.lat};${B.lng},${B.lat}?overview=full&geometries=geojson`)).json();
+      if (seq !== seqN) return;
+      const r = j.routes && j.routes[0]; if (!r) throw 0;
       S.km = r.distance / 1000; S.min = Math.round(r.duration / 60);
-      routeLine = L.geoJSON(r.geometry, { style: { color: "#007AFF", weight: 5, opacity: .9 } }).addTo(map);
+      if (isTow() && map) routeLine = L.geoJSON(r.geometry, { style: { color: "#007AFF", weight: 5, opacity: .9 } }).addTo(map);
     } catch (e) {
-      if (seq !== routeSeq) return;
-      S.km = haversine(S.from, S.to) * 1.3; S.approx = true;
-      routeLine = L.polyline([[S.from.lat, S.from.lng], [S.to.lat, S.to.lng]], { color: "#007AFF", weight: 4, dashArray: "6 8" }).addTo(map);
+      if (seq !== seqN) return;
+      S.km = haversine(A, B) * 1.3; S.approx = true;
+      if (isTow() && map) routeLine = L.polyline([[A.lat, A.lng], [B.lat, B.lng]], { color: "#007AFF", weight: 4, dashArray: "6 8" }).addTo(map);
     }
-    map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
   }
-  renderSum();
+  fit(); renderSum();
 }
-function currentPrice() {
-  if (isTow() && S.km == null) return null;
-  return priceFor(S.service, S.car, S.km);
-}
+function currentPrice() { return S.km == null ? null : priceFor(S.service, S.car, S.km); }
 function renderSum() {
-  const tow = isTow();
-  $("#sum-dist").hidden = !tow; $("#sum-time").hidden = !tow;
-  $("#sum").style.gridTemplateColumns = tow ? "" : "1fr";
+  $("#dist-l").textContent = isTow() ? t("o_distance") : t("o_to_you");
   $("#v-dist").textContent = S.km != null ? (S.approx ? "≈ " : "") + S.km.toFixed(1) + " " + t("o_km") : "—";
   $("#v-time").textContent = S.min != null ? S.min + " " + t("o_min") : "—";
-  const p = currentPrice();
-  $("#v-price").textContent = p != null ? "≈ " + money(p) : (tow ? (t("from_price") === "от" ? "от " + money(carById(S.car).base) : money(carById(S.car).base) + " " + t("from_price")) : "—");
+  const p = currentPrice(), mp = isTow() ? carById(S.car).base : svcById(S.service).base;
+  $("#v-price").textContent = p != null ? "≈ " + money(p) : (LANG === "ru" ? "от " + money(mp) : money(mp) + " " + t("from_price"));
   $("#sum-note").textContent = S.approx ? t("o_route_fail") : t("tnote");
 }
 
-/* ---------- Chips ---------- */
+/* ---------- Услуга и авто ---------- */
 function renderChips() {
-  $("#svc-chips").innerHTML = EVAGO.services.map(s => `<button type="button" class="chip" data-s="${s.id}" aria-pressed="${s.id === S.service}">${icon(s.id)}${s[LANG][0]}</button>`).join("");
-  $$("#svc-chips .chip").forEach(b => b.onclick = () => { S.service = b.dataset.s; renderChips(); applyService(); });
-  $("#car-chips").innerHTML = EVAGO.cars.map(c => `<button type="button" class="chip" data-c="${c.id}" aria-pressed="${c.id === S.car}">${c[LANG]}</button>`).join("");
-  $$("#car-chips .chip").forEach(b => b.onclick = () => { S.car = b.dataset.c; renderChips(); renderSum(); });
-  const probs = ["pr1", "pr2", "pr3", "pr4", "pr5", "pr6"];
-  $("#prob-chips").innerHTML = probs.map(p => `<button type="button" class="chip" data-p="${p}" aria-pressed="${S.problems.has(p)}">${t(p)}</button>`).join("");
-  $$("#prob-chips .chip").forEach(b => b.onclick = () => { const p = b.dataset.p; S.problems.has(p) ? S.problems.delete(p) : S.problems.add(p); b.setAttribute("aria-pressed", S.problems.has(p)); });
+  $("#svc").innerHTML = EVAGO.services.map(s => `<button type="button" data-s="${s.id}" aria-pressed="${s.id === S.service}">${icon(s.id)}<span>${s[LANG][0]}</span></button>`).join("");
+  $$("#svc button").forEach(b => b.onclick = () => { S.service = b.dataset.s; renderChips(); applyService(); });
+  $("#cars").innerHTML = EVAGO.cars.map(c => `<button type="button" class="chip" data-c="${c.id}" aria-pressed="${c.id === S.car}">${c[LANG]}</button>`).join("");
+  $$("#cars .chip").forEach(b => b.onclick = () => { S.car = b.dataset.c; renderChips(); renderSum(); });
+  $("#probs").innerHTML = ["pr1", "pr2", "pr3", "pr4", "pr5", "pr6"].map(p => `<button type="button" class="chip" data-p="${p}" aria-pressed="${S.problems.has(p)}">${t(p)}</button>`).join("");
+  $$("#probs .chip").forEach(b => b.onclick = () => { const p = b.dataset.p; S.problems.has(p) ? S.problems.delete(p) : S.problems.add(p); b.setAttribute("aria-pressed", S.problems.has(p)); });
+  $("#send span").textContent = isTow() ? t("o_send") : t("call_help");
 }
 function applyService() {
   const tow = isTow();
-  $("#pt-to").hidden = !tow;
-  if (!tow) { setMode("from"); if (markers.to) setMarker("to"); }
-  if (tow && S.to) setMarker("to"); else if (markers.to) { map.removeLayer(markers.to); markers.to = null; }
-  if (tow && S.from && !S.to) setMode("to");
-  updateHint(); route();
+  $("#pt-to").hidden = !tow; $("#car-box").hidden = !tow; $("#seg").hidden = !tow;
+  setMode(tow && S.from && !S.to ? "to" : "from");
+  setMarker("to"); route();
 }
 
-/* ---------- Steps ---------- */
-function showErr(n, msg) { const e = $("#err" + n); e.textContent = msg; e.hidden = false; }
-function hideErr(n) { $("#err" + n).hidden = true; }
+/* ---------- Фото ---------- */
+function renderPhotos() {
+  const box = $("#photos");
+  box.innerHTML = S.photos.map((p, i) => `<div class="ph"><img src="${p.url}" alt=""><button type="button" data-del="${i}" aria-label="×">×</button></div>`).join("")
+    + (S.photos.length < 3 ? `<label class="add-ph" for="file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>${t("o_add_photo")}</label>` : "");
+  $$("[data-del]", box).forEach(b => b.onclick = () => { URL.revokeObjectURL(S.photos[b.dataset.del].url); S.photos.splice(+b.dataset.del, 1); renderPhotos(); });
+}
+$("#file").addEventListener("change", e => {
+  [...e.target.files].slice(0, 3 - S.photos.length).forEach(f => { if (f.type.startsWith("image/")) S.photos.push({ file: f, url: URL.createObjectURL(f) }); });
+  e.target.value = ""; renderPhotos();
+});
+// уменьшаем до 1280px JPEG, чтобы быстро грузилось с мобильного интернета
+function shrink(file) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, 1280 / Math.max(img.width, img.height));
+      const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(b => b ? res(b) : rej(), "image/jpeg", .82);
+    };
+    img.onerror = rej; img.src = URL.createObjectURL(file);
+  });
+}
+async function uploadPhotos() {
+  const urls = [];
+  for (const p of S.photos) {
+    const blob = await shrink(p.file), name = crypto.randomUUID() + ".jpg";
+    const r = await fetch(`${EVAGO.supabaseUrl}/storage/v1/object/order-photos/${name}`, {
+      method: "POST", headers: { apikey: EVAGO.supabaseKey, Authorization: `Bearer ${EVAGO.supabaseKey}`, "Content-Type": "image/jpeg" }, body: blob });
+    if (!r.ok) throw new Error("upload");
+    urls.push(`${EVAGO.supabaseUrl}/storage/v1/object/public/order-photos/${name}`);
+  }
+  return urls;
+}
 
+/* ---------- Шаги ---------- */
+function showErr(n, m) { const e = $("#err" + n); e.textContent = m; e.hidden = false; }
+function hideErr(n) { $("#err" + n).hidden = true; }
 $("#next").onclick = () => {
   if (!S.from) { showErr(1, t("o_need_from")); $("#from").focus(); return; }
   if (isTow() && !S.to) { showErr(1, t("o_need_to")); $("#to").focus(); return; }
-  hideErr(1);
-  renderRecap();
-  $("#step1").hidden = true; $("#step2").hidden = false; document.body.classList.add("step2");
-  $(".panel").scrollTop = 0; window.scrollTo({ top: 0 });
+  hideErr(1); renderRecap();
+  $("#step1").hidden = true; $("#step2").hidden = false; window.scrollTo({ top: 0 });
   history.pushState({ step: 2 }, "");
 };
 $("#back").onclick = () => history.back();
-window.addEventListener("popstate", () => { $("#step2").hidden = true; $("#step1").hidden = false; document.body.classList.remove("step2"); setTimeout(() => map.invalidateSize(), 50); });
+window.addEventListener("popstate", () => { if (isBig()) closeBig(); $("#step2").hidden = true; $("#step1").hidden = false; setTimeout(() => map && map.invalidateSize(), 50); });
 
 function renderRecap() {
   const s = svcById(S.service), p = currentPrice();
-  $("#recap").innerHTML = `
-    <b>${esc(s[LANG][0])} · ${esc(carById(S.car)[LANG])}</b>
+  $("#recap").innerHTML = `<b>${esc(s[LANG][0])}${isTow() ? " · " + esc(carById(S.car)[LANG]) : ""}</b>
     <div class="r"><span class="dot dot-a"></span><span>${esc(S.from.label)}</span></div>
     ${isTow() ? `<div class="r"><span class="dot dot-b"></span><span>${esc(S.to.label)}</span></div>` : ""}
-    <div class="p"><span>${t("o_price")}${S.km != null ? ` · ${S.km.toFixed(1)} ${t("o_km")}` : ""}</span><span class="num">≈ ${money(p)}</span></div>`;
+    <div class="p"><span>${t("o_price")}${S.km != null ? ` · ${S.km.toFixed(1)} ${t("o_km")}` : ""}</span><span class="num">${p != null ? "≈ " + money(p) : "—"}</span></div>`;
 }
 
 phoneMask($("#phone"));
@@ -389,41 +418,43 @@ $("#step2").addEventListener("submit", async e => {
   const phone = normPhone($("#phone").value);
   if (!phone) { showErr(2, t("o_phone_err")); $("#phone").focus(); return; }
   hideErr(2);
-  const btn = $("#send"); btn.disabled = true; btn.querySelector("span").textContent = t("o_sending");
+  const btn = $("#send"), lbl = $("#send span"); btn.disabled = true;
+  let photos = [];
+  if (S.photos.length) {
+    lbl.textContent = t("o_uploading");
+    try { photos = await uploadPhotos(); } catch (x) { photos = []; showErr(2, t("o_photo_err")); }
+  }
+  lbl.textContent = t("o_sending");
   const probs = [...S.problems].map(p => I18N.ru[p]);
   const comment = [qs.get("sos") ? "SOS" : "", probs.join(", "), $("#comment").value.trim()].filter(Boolean).join(" | ");
+  const params = {
+    p_service: S.service, p_car_type: isTow() ? S.car : "other",
+    p_from_address: S.from.label, p_from_lat: S.from.lat, p_from_lng: S.from.lng,
+    p_to_address: isTow() ? S.to.label : null, p_to_lat: isTow() ? S.to.lat : null, p_to_lng: isTow() ? S.to.lng : null,
+    p_distance_km: S.km != null ? Math.round(S.km * 10) / 10 : null, p_price_est: currentPrice() != null ? Math.round(currentPrice()) : null,
+    p_client_name: $("#name").value.trim(), p_phone: phone, p_comment: comment.slice(0, 500), p_lang: LANG
+  };
   try {
-    const id = await rpc("create_order", {
-      p_service: S.service, p_car_type: S.car,
-      p_from_address: S.from.label, p_from_lat: S.from.lat, p_from_lng: S.from.lng,
-      p_to_address: isTow() ? S.to.label : null, p_to_lat: isTow() ? S.to.lat : null, p_to_lng: isTow() ? S.to.lng : null,
-      p_distance_km: S.km != null ? Math.round(S.km * 10) / 10 : null, p_price_est: Math.round(currentPrice()),
-      p_client_name: $("#name").value.trim(), p_phone: phone, p_comment: comment.slice(0, 500), p_lang: LANG
-    });
+    let id;
+    try { id = await rpc("create_order", photos.length ? { ...params, p_photos: photos } : params); }
+    catch (x) { if (photos.length && !/too_many/.test(x.message)) id = await rpc("create_order", params); else throw x; }
     lastOrder(id);
     location.href = "track.html?id=" + encodeURIComponent(id);
   } catch (err) {
     showErr(2, String(err.message).includes("too_many") ? t("o_too_many") : t("o_send_err"));
-    btn.disabled = false; btn.querySelector("span").textContent = t("o_send");
+    btn.disabled = false; renderChips();
   }
 });
 
-/* ---------- Start ---------- */
+/* ---------- Старт ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
   $("#sos-note").hidden = !qs.get("sos");
-  renderChips(); applyService(); renderSum();
+  renderChips(); renderPhotos(); applyService(); renderSum();
   const fromQ = qs.get("from"), toQ = qs.get("to");
-  if (fromQ) {
-    $("#from").value = fromQ;
-    try { const r = (await search(fromQ))[0]; if (r) { await placePoint("from", r.lat, r.lng, fromQ); map.setView([r.lat, r.lng], 15); } } catch (e) {}
-  }
-  if (toQ && isTow()) {
-    $("#to").value = toQ;
-    try { const r = (await search(toQ))[0]; if (r) await placePoint("to", r.lat, r.lng, toQ); } catch (e) {}
-  }
-  if (!fromQ) locate(true);
+  if (fromQ) { $("#from").value = fromQ; try { const r = (await search(fromQ))[0]; if (r) await placePoint("from", r.lat, r.lng, fromQ); } catch (e) {} }
+  if (toQ && isTow()) { $("#to").value = toQ; try { const r = (await search(toQ))[0]; if (r) await placePoint("to", r.lat, r.lng, toQ); } catch (e) {} }
 });
-onLang(() => { renderChips(); renderSum(); updateHint(); if (!$("#step2").hidden) renderRecap(); });
+onLang(() => { renderChips(); renderSum(); renderPhotos(); if (!$("#step2").hidden) renderRecap(); });
 </script>
 </body>
 </html>

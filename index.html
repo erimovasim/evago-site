@@ -30,6 +30,8 @@
 .stat b{display:block;font-size:26px;font-weight:800;line-height:1.1}
 .stat span{font-size:14px;color:var(--muted)}
 .form-col{padding-top:255px}
+.m-stats{display:none}
+@media (max-width:960px){.hero-text .stats{display:none}.m-stats{display:flex}}
 .active{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--ink);color:#fff;border-radius:14px;padding:12px 16px;margin-bottom:22px}
 .active b{display:flex;gap:10px;align-items:center}
 .active b::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--accent);animation:bl 1.2s infinite}
@@ -37,9 +39,9 @@
 
 /* Quick order card */
 .qo{background:#fff;border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:6px 20px 20px}
-.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;border-bottom:1px solid var(--line)}
 .tabs::-webkit-scrollbar{display:none}
-.tab{border:0;background:none;padding:16px 12px 13px;font-size:15px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab{border:0;background:none;padding:14px 4px 12px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;line-height:1.25;text-align:center}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
 .qo .row{display:flex;gap:14px;align-items:center;padding:11px 4px;border-bottom:1px solid var(--line)}
 .qo .row label{flex:1;min-width:0}
@@ -53,26 +55,40 @@
 .qo .geo-n{font-size:12px;color:var(--muted);margin-top:10px;text-align:center}
 
 @media (max-width:960px){
-  .hero-photo{position:relative;width:auto;height:220px;margin-inline:-20px;margin-top:26px}
-  .hero-photo::after{background:linear-gradient(0deg,#fff 0%,rgba(255,255,255,0) 35%)}
+  .hero{padding-block:0 40px}
+  .hero-photo{position:absolute;top:0;left:0;right:0;width:auto;height:330px;background-position:30% center}
+  .hero-photo::after{background:linear-gradient(180deg,rgba(17,17,17,.05) 0%,rgba(17,17,17,.2) 40%,rgba(17,17,17,.78) 100%)}
   .hero-grid{grid-template-columns:1fr;gap:0}
-  .form-col{padding-top:0;margin-top:-56px;position:relative}
-  .hero{padding-block:28px 48px}
+  .hero-text{min-height:300px;display:flex;flex-direction:column;justify-content:flex-end;padding-bottom:22px;color:#fff}
+  .hero-text .badge{align-self:flex-start;background:rgba(255,255,255,.92);color:var(--ink);border:0}
+  .hero h1{margin-top:14px;font-size:40px;color:#fff}
+  .hero .lead,.hero-cta{display:none}
+  .stats{order:3;margin-top:22px;gap:22px;justify-content:space-between}
+  .stats .stat b{font-size:22px}
+  .form-col{padding-top:0;margin-top:0;position:relative}
+  .active{margin-bottom:12px}
 }
 
-/* Services */
-.svc-wrap{display:grid;grid-template-columns:1fr 290px;gap:44px;align-items:center}
-.svc-wrap>*{min-width:0}
-.svcs{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.svc{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;border:1px solid var(--line);border-radius:var(--r);padding:24px 14px;background:#fff;transition:border-color .2s,box-shadow .2s,transform .2s}
-.svc:hover{border-color:var(--accent);box-shadow:0 12px 30px -16px rgba(17,17,17,.25);transform:translateY(-2px)}
-.svc-ic{width:56px;height:56px;border-radius:14px;background:var(--accent-soft);display:grid;place-items:center;margin-bottom:4px}
-.svc-ic svg{width:28px;height:28px}
-.svc h3{font-size:16px;font-weight:700}
-.svc p{font-size:14px;color:var(--muted)}
-.svc .pr{font-size:14px;font-weight:700;margin-top:auto;padding-top:6px}
-@media (max-width:1000px){.svc-wrap{grid-template-columns:1fr}.phone{margin:0 auto}}
-@media (max-width:640px){.svcs{grid-template-columns:1fr 1fr}.svc{padding:20px 10px}}
+/* Services: фото-карточки (фото кладутся в assets/services/<id>.jpg и assets/cars/<id>.png) */
+.pcards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.pcard{position:relative;display:flex;flex-direction:column;min-height:300px;border-radius:20px;overflow:hidden;padding:22px;background:linear-gradient(160deg,#E9EEF0 0%,#F4F1EC 55%,#FBEFD9 100%);transition:transform .2s,box-shadow .2s;isolation:isolate}
+.pcard:hover{transform:translateY(-3px);box-shadow:0 18px 40px -20px rgba(17,17,17,.35)}
+.pcard h3{font-size:19px;font-weight:700;max-width:12em}
+.pcard p{font-size:14px;color:var(--muted);margin-top:6px;max-width:16em}
+.pcard .pr{font-size:24px;font-weight:800;margin-top:10px}
+.pcard .pr small{font-size:.6em;font-weight:600;color:var(--muted)}
+.pcard .art{position:absolute;right:0;bottom:0;width:78%;height:56%;display:grid;place-items:end;z-index:-1}
+.pcard .art img{width:100%;height:100%;object-fit:contain;object-position:right bottom}
+.pcard .art.photo img{object-fit:cover;object-position:center}
+.pcard .art.photo{width:100%;height:52%;-webkit-mask-image:linear-gradient(180deg,transparent 0,#000 35%);mask-image:linear-gradient(180deg,transparent 0,#000 35%)}
+.pcard .art svg{width:120px;height:120px;margin:0 18px 18px 0;color:#1F1F1F;opacity:.85}
+.pcard .go{position:absolute;left:22px;bottom:22px;width:40px;height:40px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center}
+.pcard .go svg{width:18px;height:18px}
+.cars{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:16px}
+.cars .pcard{grid-column:span 2;min-height:280px}
+.cars .pcard.wide{grid-column:span 3}
+@media (max-width:1000px){.pcards{grid-template-columns:1fr 1fr}.cars{grid-template-columns:1fr 1fr}.cars .pcard,.cars .pcard.wide{grid-column:auto}.cars .pcard.wide:last-child{grid-column:1/-1}}
+@media (max-width:560px){.pcards{gap:12px}.pcard{min-height:230px;padding:16px;border-radius:18px}.pcard h3{font-size:16px}.pcard p{display:none}.pcard .pr{font-size:19px}.pcard .go{left:16px;bottom:16px;width:34px;height:34px}.pcard .art svg{width:84px;height:84px;margin:0 12px 12px 0}.cars{gap:12px}.cars .pcard{min-height:240px}.pcard .art{height:44%}}
 
 /* Phone illustration */
 .phone{width:290px;max-width:100%;border:10px solid var(--ink);border-radius:44px;background:#fff;overflow:hidden;box-shadow:0 30px 60px -20px rgba(17,17,17,.35)}
@@ -142,7 +158,7 @@ td.price{font-weight:800}
   <div class="hero">
     <div class="hero-photo" role="img" aria-label="EVAGO эвакуаторы"></div>
     <div class="wrap hero-grid">
-      <div>
+      <div class="hero-text">
         <a class="active" id="active" href="#" hidden><b data-i="active_order"></b><span data-i="open"></span></a>
         <span class="badge"><i></i><span data-i="badge"></span></span>
         <h1><span data-i="h1a">Жолда жалғыз</span><span class="y" data-i="h1b">емессің.</span></h1>
@@ -168,34 +184,19 @@ td.price{font-weight:800}
           <button class="btn btn-y btn-block" type="submit"><span data-i="call"></span></button>
           <p class="geo-n" data-i="qo_note"></p>
         </form>
+        <div class="stats m-stats">
+          <div class="stat"><b>24/7</b><span data-i="st1"></span></div>
+          <div class="stat"><b class="num n-svc">4</b><span data-i="st2"></span></div>
+          <div class="stat"><b class="num n-car">5</b><span data-i="st3"></span></div>
+        </div>
       </div>
     </div>
   </div>
 
   <section id="services">
-    <div class="wrap svc-wrap">
-      <div>
-        <div class="sec-h center"><span class="eyebrow" data-i="svc_eyebrow"></span><h2 data-i="svc_h"></h2><p data-i="svc_p"></p></div>
-        <div class="svcs" id="svcs"></div>
-      </div>
-      <div class="phone" aria-hidden="true">
-        <div class="ph-top num"><span>9:41</span><span>EVAGO</span></div>
-        <div class="ph-map">
-          <svg viewBox="0 0 270 240" preserveAspectRatio="xMidYMid slice">
-            <g stroke="#fff" stroke-width="9" fill="none"><path d="M-10 60 L280 40"/><path d="M-10 170 L280 190"/><path d="M60 -10 L80 260"/><path d="M190 -10 L170 260"/></g>
-            <g stroke="#E2E5DF" stroke-width="3" fill="none"><path d="M-10 115 H280"/><path d="M125 -10 V260"/></g>
-            <rect x="140" y="70" width="60" height="40" rx="4" fill="#DDE9D6"/>
-            <path d="M76 204 L72 170 L125 165 L125 115 L180 112 L184 60" stroke="#007AFF" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="76" cy="204" r="7" fill="#111"/><circle cx="76" cy="204" r="3" fill="#fff"/>
-            <g transform="translate(166 46)"><rect width="34" height="20" rx="5" fill="#FFD200" stroke="#111" stroke-width="1.5"/><circle cx="9" cy="21" r="3.5" fill="#111"/><circle cx="25" cy="21" r="3.5" fill="#111"/></g>
-          </svg>
-        </div>
-        <div class="ph-card">
-          <div class="ph-row"><span class="d" style="background:#111"></span><span>Абай даңғылы, 55</span></div>
-          <div class="ph-row" style="margin-top:6px"><span class="d" style="background:#FFD200"></span><span>Райымбек даңғылы, 348</span></div>
-          <div class="ph-st"><b class="num">12 км</b><span data-i="st_onway"></span></div>
-        </div>
-      </div>
+    <div class="wrap">
+      <div class="sec-h center"><span class="eyebrow" data-i="svc_eyebrow"></span><h2 data-i="svc_h"></h2><p data-i="svc_p"></p></div>
+      <div class="pcards" id="svcs"></div>
     </div>
   </section>
 
@@ -211,14 +212,11 @@ td.price{font-weight:800}
     </div>
   </section>
 
-  <section id="tariffs">
+  <section id="tariffs" style="padding-top:0">
     <div class="wrap">
-      <div class="sec-h"><span class="eyebrow" data-i="nav_tariffs"></span><h2 data-i="tar_h"></h2><p data-i="tar_p"></p></div>
-      <div class="tar">
-        <div class="tbl-wrap"><table><thead><tr><th data-i="th_car"></th><th data-i="th_base"></th><th data-i="th_km"></th><th data-i="th_ex"></th></tr></thead><tbody id="tb-cars"></tbody></table></div>
-        <div class="tbl-wrap"><table><thead><tr><th data-i="th_svc"></th><th data-i="th_price"></th></tr></thead><tbody id="tb-svc"></tbody></table></div>
-      </div>
-      <p class="tnote" data-i="tnote"></p>
+      <div class="sec-h center"><span class="eyebrow" data-i="nav_tariffs"></span><h2 data-i="tar_h2"></h2><p data-i="tar_p"></p></div>
+      <div class="cars" id="cars"></div>
+      <p class="tnote center" data-i="tnote" style="text-align:center"></p>
     </div>
   </section>
 
@@ -265,9 +263,9 @@ td.price{font-weight:800}
 <script>
 let tab = "tow";
 function renderHome() {
-  $("#n-svc").textContent = EVAGO.services.length;
-  $("#n-car").textContent = EVAGO.cars.length;
-  $("#tabs").innerHTML = ["tow", "battery", "tire", "fuel"].map(id => `<button type="button" role="tab" class="tab" data-t="${id}" aria-selected="${id === tab}">${svcById(id)[LANG][0]}</button>`).join("");
+  $$("#n-svc,.n-svc").forEach(x => x.textContent = EVAGO.services.length);
+  $$("#n-car,.n-car").forEach(x => x.textContent = EVAGO.cars.length);
+  $("#tabs").innerHTML = EVAGO.services.map(s => s.id).map(id => `<button type="button" role="tab" class="tab" data-t="${id}" aria-selected="${id === tab}">${svcById(id)[LANG][0]}</button>`).join("");
   $$("#tabs .tab").forEach(b => b.onclick = () => { tab = b.dataset.t; renderHome(); });
   $("#q-s").value = tab;
   $("#q-to-row").hidden = tab !== "tow";
@@ -275,14 +273,12 @@ function renderHome() {
   $("#q-car").innerHTML = EVAGO.cars.map(c => `<option value="${c.id}">${c[LANG]}</option>`).join("");
   if (car) $("#q-car").value = car;
 
-  $("#svcs").innerHTML = EVAGO.services.map(s => {
-    const pr = s.price ? money(s.price) : money(Math.min(...EVAGO.cars.map(c => c.base)));
-    const prTxt = LANG === "ru" ? "от " + pr : pr + " " + t("from_price");
-    return `<a class="svc" href="order.html?s=${s.id}"><span class="svc-ic">${icon(s.id)}</span><h3>${s[LANG][0]}</h3><p>${s[LANG][1]}</p><span class="pr num">${prTxt}</span></a>`;
-  }).join("");
-
-  $("#tb-cars").innerHTML = EVAGO.cars.map(c => `<tr><td><b>${c[LANG]}</b></td><td class="num">${money(c.base)}</td><td class="num">${money(c.km)}</td><td class="price num">${money(c.base + c.km * 10)}</td></tr>`).join("");
-  $("#tb-svc").innerHTML = EVAGO.services.filter(s => s.price).map(s => `<tr><td><b>${s[LANG][0]}</b></td><td class="price num">${money(s.price)}</td></tr>`).join("");
+  const arrow = '<span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>';
+  const fromTxt = n => LANG === "ru" ? `<small>от</small> ${money(n)}` : `${money(n)} <small>${t("from_price")}</small>`;
+  // картинка: если файла нет — рисуем иконку
+  const art = (src, id, photo) => `<span class="art${photo ? " photo" : ""}"><img src="${src}" alt="" loading="lazy" onerror="this.parentNode.classList.remove('photo');this.outerHTML=icon('${id}',1.4)"></span>`;
+  $("#svcs").innerHTML = EVAGO.services.map(s => `<a class="pcard" href="order.html?s=${s.id}"><h3>${s[LANG][0]}</h3><p>${s[LANG][1]}</p><span class="pr num">${fromTxt(minPrice(s))}</span>${art(s.id === "tow" ? "assets/hero.jpg" : "assets/services/" + s.id + ".jpg", s.id, true)}${arrow}</a>`).join("");
+  $("#cars").innerHTML = EVAGO.cars.map((c, i) => `<a class="pcard${i >= 3 ? " wide" : ""}" href="order.html?s=tow&car=${c.id}"><h3>${t("tow_of")} ${c[LANG].toLowerCase()}</h3><span class="pr num">${fromTxt(c.base)}</span><span class="pr num" style="font-size:14px;font-weight:600;color:var(--muted);margin-top:2px">+ ${money(c.km)} / ${t("o_km")}</span>${art("assets/cars/" + c.id + ".png", "car", false)}${arrow}</a>`).join("");
 
   const id = lastOrder();
   $("#active").hidden = !id;

@@ -34,6 +34,8 @@ body{background:#0E0E0E;color:#F5F5F2}
 .btn-g{background:#232323;color:#fff;border-color:#333}
 .btn-big{padding:18px;font-size:17px;font-weight:700}
 .note{font-size:13px;color:#9A9A92;text-align:center}
+.pgal{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pgal img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;max-width:100%}
 .center{padding:60px 20px;text-align:center;display:grid;gap:16px;justify-items:center}
 </style>
 </head>
@@ -78,6 +80,7 @@ function render() {
       <div class="box"><small>${t("dv_price")}${O.distance_km ? " · " + O.distance_km + " " + t("o_km") : ""}</small><b class="num">${price ? (O.final_price ? "" : "≈ ") + money(price) : "—"}</b></div>
     </div>
     ${O.comment ? `<div class="box"><small>${t("dv_comment")}</small><span>${esc(O.comment)}</span></div>` : ""}
+    ${O.photos && O.photos.length ? `<div class="pgal">${O.photos.map(u => `<a href="${esc(u)}" target="_blank" rel="noopener"><img src="${esc(u)}" alt="" loading="lazy"></a>`).join("")}</div>` : ""}
     <div class="two">
       <a class="btn btn-g" href="tel:${esc(O.phone)}">${t("dv_call")}</a>
       <a class="btn btn-g" href="${navUrl(target[0], target[1])}" target="_blank" rel="noopener">${t("dv_nav")} · Яндекс</a>
