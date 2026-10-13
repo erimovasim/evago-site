@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="assets/style.css?v=14">
+<link rel="stylesheet" href="assets/style.css?v=15">
 <style>
 /* Заказ: фото-шапка как на главной, карточка формы поверх, маленькая карта раскрывается по нажатию */
 body{background:var(--gray)}
@@ -172,7 +172,7 @@ body{background:var(--gray)}
 <footer id="contact"></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="assets/app.js?v=14"></script>
+<script src="assets/app.js?v=15"></script>
 <script>
 const qs = new URLSearchParams(location.search);
 const S = {
@@ -506,6 +506,8 @@ $("#step2").addEventListener("submit", async e => {
   location.href = "https://wa.me/" + EVAGO.whatsapp + "?text=" + encodeURIComponent(orderText(phone, comment, photos, id));
   setTimeout(() => { btn.disabled = false; renderChips(); }, 3000);
 });
+// клиент вернулся из WhatsApp кнопкой «назад» — кнопка снова рабочая, можно отправить ещё раз
+window.addEventListener("pageshow", () => { const b = $("#send"); if (b) { b.disabled = false; renderChips(); } });
 
 /* ---------- Старт ---------- */
 document.addEventListener("DOMContentLoaded", async () => {

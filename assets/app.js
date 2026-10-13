@@ -320,10 +320,18 @@ function setLang(l) {
   renderChrome(); applyI18n(); langListeners.forEach(f => f());
 }
 
+// Последний заказ клиента. Через 6 часов считаем его закрытым, чтобы не висела старая плашка.
 function lastOrder(id) {
   try {
-    if (id !== undefined) { id ? localStorage.setItem("evago_last_order", id) : localStorage.removeItem("evago_last_order"); }
-    return localStorage.getItem("evago_last_order");
+    if (id !== undefined) {
+      if (id) localStorage.setItem("evago_last_order", JSON.stringify({ id, t: Date.now() }));
+      else localStorage.removeItem("evago_last_order");
+    }
+    const raw = localStorage.getItem("evago_last_order");
+    if (!raw) return null;
+    let v; try { v = JSON.parse(raw); } catch (e) { v = { id: raw, t: 0 }; }
+    if (!v || !v.id || Date.now() - (v.t || 0) > 6 * 3600 * 1000) { localStorage.removeItem("evago_last_order"); return null; }
+    return v.id;
   } catch (e) { return null; }
 }
 

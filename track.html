@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="assets/style.css?v=14">
+<link rel="stylesheet" href="assets/style.css?v=15">
 <style>
 .tr{display:grid;grid-template-columns:1fr 1fr;gap:28px;padding-block:32px 80px;align-items:start}
 .tr>*{min-width:0}
@@ -69,7 +69,7 @@
 <footer id="contact"></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="assets/app.js?v=14"></script>
+<script src="assets/app.js?v=15"></script>
 <script>
 const id = new URLSearchParams(location.search).get("id") || lastOrder();
 const ORDER_STEPS = ["new", "accepted", "onway", "arrived"];
@@ -86,10 +86,12 @@ const ST_ICON = {
 };
 
 function initMap() {
+  if (!window.L) { $("#tmap").hidden = true; map = null; return; }   // карта не загрузилась — статус всё равно виден
   map = L.map("tmap", { zoomControl: false }).setView(EVAGO.center, 12);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "&copy; OpenStreetMap" }).addTo(map);
 }
 function drawMap() {
+  if (!map) return;
   layers.forEach(l => map.removeLayer(l)); layers = [];
   const pin = cls => L.divIcon({ className: "", html: `<div class="pin ${cls}"></div>`, iconSize: [30, 30], iconAnchor: [15, 36] });
   const pts = [];
@@ -100,6 +102,7 @@ function drawMap() {
 }
 let drvMarker = null, drvFitted = false;
 function drawDriver() {
+  if (!map) return;
   if (!O || O.driver_lat == null) { if (drvMarker) { map.removeLayer(drvMarker); drvMarker = null; } return; }
   const ll = [O.driver_lat, O.driver_lng];
   if (!drvMarker) drvMarker = L.marker(ll, { icon: L.divIcon({ className: "", html: '<div class="truck-dot"></div>', iconSize: [34, 34], iconAnchor: [17, 17] }), zIndexOffset: 1000 }).addTo(map).bindTooltip(t("t_driver_here"));
