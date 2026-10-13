@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="assets/style.css?v=9">
+<link rel="stylesheet" href="assets/style.css?v=10">
 <style>
 /* Заказ: фото-шапка как на главной, карточка формы поверх, маленькая карта раскрывается по нажатию */
 body{background:var(--gray)}
@@ -167,7 +167,7 @@ body{background:var(--gray)}
 <footer id="contact"></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="assets/app.js?v=9"></script>
+<script src="assets/app.js?v=10"></script>
 <script>
 const qs = new URLSearchParams(location.search);
 const S = {
@@ -220,18 +220,35 @@ function fmtPhoton(p) {
   const sub = [p.name && p.street ? [p.street, p.housenumber].filter(Boolean).join(" ") : "", p.district, p.city || p.county, p.state].filter(Boolean);
   return { main, sub: [...new Set(sub)].filter(x => x !== main).join(", ") };
 }
-async function photon(q, bbox) {
-  const u = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${EVAGO.center[0]}&lon=${EVAGO.center[1]}&limit=10&bbox=${bbox}`;
+// Работаем только по Алматы и пригородам — другие города не показываем
+const ALMATY = { box: "76.60,43.10,77.20,43.45", minLat: 43.10, maxLat: 43.45, minLng: 76.60, maxLng: 77.20 };
+const inAlmaty = r => r.lat >= ALMATY.minLat && r.lat <= ALMATY.maxLat && r.lng >= ALMATY.minLng && r.lng <= ALMATY.maxLng;
+async function photon(q) {
+  const u = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${EVAGO.center[0]}&lon=${EVAGO.center[1]}&limit=10&bbox=${ALMATY.box}`;
   const j = await (await fetch(u)).json();
-  return (j.features || []).filter(f => (f.properties.countrycode || "").toUpperCase() === "KZ")
-    .map(f => ({ lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0], ...fmtPhoton(f.properties) }));
+  return (j.features || []).map(f => ({ lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0], ...fmtPhoton(f.properties) })).filter(inAlmaty);
+}
+async function nominatim(q) {
+  const u = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=kz&bounded=1&viewbox=76.60,43.45,77.20,43.10&accept-language=${LANG === "kz" ? "kk,ru" : "ru"}&q=${encodeURIComponent(q)}`;
+  const j = await (await fetch(u)).json();
+  return (j || []).map(r => {
+    const a = r.address || {};
+    const main = [a.road || a.neighbourhood || a.suburb || r.name, a.house_number].filter(Boolean).join(" ") || r.name || r.display_name.split(",")[0];
+    return { lat: +r.lat, lng: +r.lon, main, sub: [a.suburb || a.city_district, "Алматы"].filter(Boolean).join(", ") };
+  }).filter(inAlmaty);
 }
 async function search(q) {
-  const local = await photon(q, "76.45,43.05,77.35,43.55");
-  if (local.length >= 3) return local.slice(0, 6);
-  const kz = await photon(q, "46.4,40.5,87.4,55.5");
-  const seen = new Set(local.map(r => r.lat.toFixed(4) + r.lng.toFixed(4)));
-  return local.concat(kz.filter(r => !seen.has(r.lat.toFixed(4) + r.lng.toFixed(4)))).slice(0, 6);
+  // «мкр» мешает поиску — убираем; ищем в двух сервисах сразу
+  const clean = q.replace(/(^|\s)(мкр|мкрн|микрорайон|ықшамаудан|ықшам\s+аудан[ы]?)\.?(?=\s|$)/gi, " ").replace(/\s+/g, " ").trim();
+  const [a, b] = await Promise.all([photon(clean).catch(() => []), nominatim(clean).catch(() => [])]);
+  let res = [...a, ...b];
+  if (!res.length) {
+    // номер дома не нашёлся — ищем хотя бы микрорайон/улицу без номера
+    const noNum = clean.replace(/[\s,]*\d+[а-яa-z\/\-]*\s*$/i, "").trim();
+    if (noNum && noNum !== clean) res = await photon(noNum).catch(() => []);
+  }
+  const seen = new Set();
+  return res.filter(r => { const k = r.lat.toFixed(4) + r.lng.toFixed(4); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 6);
 }
 async function reverse(lat, lng) {
   try {
