@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="assets/style.css?v=11">
+<link rel="stylesheet" href="assets/style.css?v=12">
 <style>
 /* Заказ: фото-шапка как на главной, карточка формы поверх, маленькая карта раскрывается по нажатию */
 body{background:var(--gray)}
@@ -167,7 +167,7 @@ body{background:var(--gray)}
 <footer id="contact"></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="assets/app.js?v=11"></script>
+<script src="assets/app.js?v=12"></script>
 <script>
 const qs = new URLSearchParams(location.search);
 const S = {
@@ -450,6 +450,24 @@ function renderRecap() {
 }
 
 phoneMask($("#phone"));
+// Заказ: сохраняем в базу (если получится) и сразу открываем WhatsApp с готовым текстом
+function orderText(phone, comment, photos, id) {
+  const s = svcById(S.service), p = currentPrice();
+  return [
+    `🚨 EVAGO — ${t("o_summary")}${id ? " №" + id.slice(0, 8).toUpperCase() : ""}`,
+    `${s[LANG][0]}${isTow() ? " · " + carById(S.car)[LANG] : ""}`,
+    `📍 ${t("from").replace("?", ":")} ${S.from.label}`,
+    S.from.lat != null ? `https://maps.google.com/?q=${S.from.lat.toFixed(6)},${S.from.lng.toFixed(6)}` : "",
+    isTow() && S.to ? `🏁 ${t("to").replace("?", ":")} ${S.to.label}` : "",
+    S.km != null ? `${S.km.toFixed(1)} ${t("o_km")}` : "",
+    p != null ? `💰 ${t("o_price")}: ≈ ${money(p)}` : "",
+    `👤 ${$("#name").value.trim() || "—"} ${phone}`,
+    comment ? `📝 ${comment}` : "",
+    ...(photos || []).map((u, i) => `📷 ${i + 1}: ${u}`)
+  ].filter(Boolean).join("\n");
+}
+const withTimeout = (pr, ms) => Promise.race([pr, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
+
 $("#step2").addEventListener("submit", async e => {
   e.preventDefault();
   const phone = normPhone($("#phone").value);
@@ -459,7 +477,7 @@ $("#step2").addEventListener("submit", async e => {
   let photos = [];
   if (S.photos.length) {
     lbl.textContent = t("o_uploading");
-    try { photos = await uploadPhotos(); } catch (x) { photos = []; showErr(2, t("o_photo_err")); }
+    try { photos = await withTimeout(uploadPhotos(), 20000); } catch (x) { photos = []; }
   }
   lbl.textContent = t("o_sending");
   const probs = [...S.problems].map(p => I18N.ru[p]);
@@ -471,27 +489,16 @@ $("#step2").addEventListener("submit", async e => {
     p_distance_km: S.km != null ? Math.round(S.km * 10) / 10 : null, p_price_est: currentPrice() != null ? Math.round(currentPrice()) : null,
     p_client_name: $("#name").value.trim(), p_phone: phone, p_comment: comment.slice(0, 500), p_lang: LANG
   };
+  let id = null;
   try {
-    let id;
-    try { id = await rpc("create_order", photos.length ? { ...params, p_photos: photos } : params); }
-    catch (x) { if (photos.length && !/too_many/.test(x.message)) id = await rpc("create_order", params); else throw x; }
+    // копия заказа в базе — чтобы ничего не потерялось; ждём не дольше 5 секунд
+    try { id = await withTimeout(rpc("create_order", photos.length ? { ...params, p_photos: photos } : params), 5000); }
+    catch (x) { if (photos.length && !/too_many|timeout/.test(x.message)) id = await withTimeout(rpc("create_order", params), 4000); else throw x; }
     lastOrder(id);
-    location.href = "track.html?new=1&id=" + encodeURIComponent(id);
-  } catch (err) {
-    showErr(2, String(err.message).includes("too_many") ? t("o_too_many") : t("o_send_err"));
-    btn.disabled = false; renderChips();
-    // запасной путь: сайт не сохранил заказ — клиент всё равно отправляет его в WhatsApp
-    if (EVAGO.whatsapp && !String(err.message).includes("too_many")) {
-      const s = svcById(S.service), p = currentPrice();
-      const txt = [`EVAGO — ${s[LANG][0]}${isTow() ? " · " + carById(S.car)[LANG] : ""}`, `${t("from")} ${S.from.label}`,
-        isTow() && S.to ? `${t("to")} ${S.to.label}` : "", S.from.lat != null ? `📍 https://maps.google.com/?q=${S.from.lat},${S.from.lng}` : "",
-        p != null ? `${t("o_price")}: ≈ ${money(p)}` : "", `${$("#name").value.trim()} ${phone}`, comment].filter(Boolean).join("\n");
-      let a = $("#wa-fallback");
-      if (!a) { a = document.createElement("a"); a.id = "wa-fallback"; a.className = "btn btn-block"; a.style.cssText = "background:#25D366;color:#06210F"; a.target = "_blank"; a.rel = "noopener"; $("#err2").after(a); }
-      a.href = "https://wa.me/" + EVAGO.whatsapp + "?text=" + encodeURIComponent(txt);
-      a.textContent = t("t_wa_btn");
-    }
-  }
+  } catch (err) { id = null; }
+  // главное: сразу открываем WhatsApp диспетчера с текстом заказа
+  location.href = "https://wa.me/" + EVAGO.whatsapp + "?text=" + encodeURIComponent(orderText(phone, comment, photos, id));
+  setTimeout(() => { btn.disabled = false; renderChips(); }, 3000);
 });
 
 /* ---------- Старт ---------- */
