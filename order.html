@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="assets/style.css?v=8">
+<link rel="stylesheet" href="assets/style.css?v=9">
 <style>
 /* Заказ: фото-шапка как на главной, карточка формы поверх, маленькая карта раскрывается по нажатию */
 body{background:var(--gray)}
@@ -167,7 +167,7 @@ body{background:var(--gray)}
 <footer id="contact"></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="assets/app.js?v=8"></script>
+<script src="assets/app.js?v=9"></script>
 <script>
 const qs = new URLSearchParams(location.search);
 const S = {
@@ -184,6 +184,7 @@ const isTow = () => S.service === "tow";
 let map = null, markers = { from: null, to: null }, routeLine = null;
 const pin = cls => L.divIcon({ className: "", html: `<div class="pin ${cls}"></div>`, iconSize: [30, 30], iconAnchor: [15, 36] });
 function ensureMap() {
+  if (!window.L) { $("#mini").hidden = true; return; }   // карта не загрузилась — форма работает без неё
   $("#mini").hidden = false;
   if (map) { setTimeout(() => map.invalidateSize(), 30); return; }
   map = L.map("map", { zoomControl: true, attributionControl: true }).setView(EVAGO.center, 11);
@@ -191,7 +192,7 @@ function ensureMap() {
   map.on("click", e => { if (!isBig()) { openBig(); return; } placePoint(isTow() ? S.mode : "from", e.latlng.lat, e.latlng.lng); });
 }
 const isBig = () => $("#mini").classList.contains("big");
-function openBig() { ensureMap(); $("#mini").classList.add("big"); $("#mini").classList.remove("small"); document.body.style.overflow = "hidden"; setMode(S.from && isTow() && !S.to ? "to" : S.mode); setTimeout(() => { map.invalidateSize(); fit(); }, 60); }
+function openBig() { ensureMap(); if (!map) return; $("#mini").classList.add("big"); $("#mini").classList.remove("small"); document.body.style.overflow = "hidden"; setMode(S.from && isTow() && !S.to ? "to" : S.mode); setTimeout(() => { map.invalidateSize(); fit(); }, 60); }
 function closeBig() { $("#mini").classList.remove("big"); $("#mini").classList.add("small"); document.body.style.overflow = ""; setTimeout(() => { map.invalidateSize(); fit(); }, 60); }
 $("#open-map").onclick = e => { e.stopPropagation(); openBig(); };
 $("#close-map").onclick = closeBig;
@@ -462,6 +463,17 @@ $("#step2").addEventListener("submit", async e => {
   } catch (err) {
     showErr(2, String(err.message).includes("too_many") ? t("o_too_many") : t("o_send_err"));
     btn.disabled = false; renderChips();
+    // запасной путь: сайт не сохранил заказ — клиент всё равно отправляет его в WhatsApp
+    if (EVAGO.whatsapp && !String(err.message).includes("too_many")) {
+      const s = svcById(S.service), p = currentPrice();
+      const txt = [`EVAGO — ${s[LANG][0]}${isTow() ? " · " + carById(S.car)[LANG] : ""}`, `${t("from")} ${S.from.label}`,
+        isTow() && S.to ? `${t("to")} ${S.to.label}` : "", S.from.lat != null ? `📍 https://maps.google.com/?q=${S.from.lat},${S.from.lng}` : "",
+        p != null ? `${t("o_price")}: ≈ ${money(p)}` : "", `${$("#name").value.trim()} ${phone}`, comment].filter(Boolean).join("\n");
+      let a = $("#wa-fallback");
+      if (!a) { a = document.createElement("a"); a.id = "wa-fallback"; a.className = "btn btn-block"; a.style.cssText = "background:#25D366;color:#06210F"; a.target = "_blank"; a.rel = "noopener"; $("#err2").after(a); }
+      a.href = "https://wa.me/" + EVAGO.whatsapp + "?text=" + encodeURIComponent(txt);
+      a.textContent = t("t_wa_btn");
+    }
   }
 });
 
