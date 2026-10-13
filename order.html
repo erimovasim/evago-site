@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="assets/style.css?v=12">
+<link rel="stylesheet" href="assets/style.css?v=13">
 <style>
 /* Заказ: фото-шапка как на главной, карточка формы поверх, маленькая карта раскрывается по нажатию */
 body{background:var(--gray)}
@@ -167,7 +167,7 @@ body{background:var(--gray)}
 <footer id="contact"></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="assets/app.js?v=12"></script>
+<script src="assets/app.js?v=13"></script>
 <script>
 const qs = new URLSearchParams(location.search);
 const S = {
@@ -492,7 +492,7 @@ $("#step2").addEventListener("submit", async e => {
   let id = null;
   try {
     // копия заказа в базе — чтобы ничего не потерялось; ждём не дольше 5 секунд
-    try { id = await withTimeout(rpc("create_order", photos.length ? { ...params, p_photos: photos } : params), 5000); }
+    try { id = await withTimeout(photos.length ? rpc("create_order_photos", { ...params, p_photos: photos }) : rpc("create_order", params), 5000); }
     catch (x) { if (photos.length && !/too_many|timeout/.test(x.message)) id = await withTimeout(rpc("create_order", params), 4000); else throw x; }
     lastOrder(id);
   } catch (err) { id = null; }
