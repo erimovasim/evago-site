@@ -5,11 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Эвакуатор шақыру — EVAGO</title>
 <meta name="description" content="Эвакуатор шақыру: орныңызды көрсетіңіз, бағаны алдын ала көріңіз.">
+<meta property="og:site_name" content="EVAGO">
+<meta property="og:title" content="EVAGO — эвакуатор және жол көмегі">
+<meta property="og:description" content="Алматы · 24/7 · Жолда жалғыз емессің">
+<meta property="og:image" content="https://erimovasim.github.io/evago-site/assets/hero.jpg">
+<meta property="og:type" content="website">
 <meta name="theme-color" content="#FFD200">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="assets/style.css?v=13">
+<link rel="stylesheet" href="assets/style.css?v=14">
 <style>
 /* Заказ: фото-шапка как на главной, карточка формы поверх, маленькая карта раскрывается по нажатию */
 body{background:var(--gray)}
@@ -167,7 +172,7 @@ body{background:var(--gray)}
 <footer id="contact"></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="assets/app.js?v=13"></script>
+<script src="assets/app.js?v=14"></script>
 <script>
 const qs = new URLSearchParams(location.search);
 const S = {
@@ -455,6 +460,7 @@ function orderText(phone, comment, photos, id) {
   const s = svcById(S.service), p = currentPrice();
   return [
     `🚨 EVAGO — ${t("o_summary")}${id ? " №" + id.slice(0, 8).toUpperCase() : ""}`,
+    id ? location.href.replace(/order\.html.*$/, "track.html?id=" + id) : "",
     `${s[LANG][0]}${isTow() ? " · " + carById(S.car)[LANG] : ""}`,
     `📍 ${t("from").replace("?", ":")} ${S.from.label}`,
     S.from.lat != null ? `https://maps.google.com/?q=${S.from.lat.toFixed(6)},${S.from.lng.toFixed(6)}` : "",
